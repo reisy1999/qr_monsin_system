@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  input-app:
+    build:
+      context: ./input-app
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    networks:
+      - qr_monsin_network
+
+  restore-app:
+    build:
+      context: ./restore-app
+      dockerfile: Dockerfile
+    env_file:
+      - ./restore-app/.env
+    ports:
+      - "5174:80"
+    networks:
+      - qr_monsin_network
+
+networks:
+  qr_monsin_network:
+    driver: bridge
