@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "qr-monsin-system-root",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "pako": "^2.1.0",
+    "crypto-js": "^4.2.0",
+    "encoding-japanese": "^2.2.0"
+  }
+}
