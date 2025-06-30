@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import pako from 'pako';
-import CryptoJS from 'crypto-js';
-import * as Encoding from 'encoding-japanese';
 import { departmentMap } from './templates';
 import type { Template, Question } from './templates';
+import { encryptCsv } from '../../shared/crypto';
 
 const App: React.FC = () => {
   const [departmentId, setDepartmentId] = useState('');
@@ -40,12 +38,7 @@ const App: React.FC = () => {
       }),
     ].join(',');
 
-    const sjis_array = Encoding.convert(csvData, { to: 'SJIS', type: 'arraybuffer' });
-    const compressed = pako.deflate(sjis_array);
-    const encrypted = CryptoJS.AES.encrypt(
-      CryptoJS.lib.WordArray.create(compressed),
-      encryptionKey
-    ).toString();
+    const encrypted = encryptCsv(csvData, encryptionKey);
 
     setQrData(encrypted);
   }, [formData, departmentId, template, encryptionKey]);
