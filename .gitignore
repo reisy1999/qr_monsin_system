@@ -1,0 +1,5 @@
+# Ignore build outputs
+input-app/dist/
+restore-app/dist/
+input-app/node_modules/.tmp/
+restore-app/node_modules/.tmp/
