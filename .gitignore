@@ -3,4 +3,4 @@ input-app/dist/
 restore-app/dist/
 input-app/node_modules/.tmp/
 restore-app/node_modules/.tmp/
-node_modules/
+**/node_modules/
