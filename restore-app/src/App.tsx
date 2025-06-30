@@ -15,6 +15,10 @@ const App: React.FC = () => {
 
   const handleRestore = () => {
     try {
+      if (!departmentId) {
+        setError('診療科を選択してください');
+        return;
+      }
       const decrypted = CryptoJS.AES.decrypt(qrData, encryptionKey);
       const decryptedBytes = new Uint8Array(decrypted.words.length * 4);
       for (let i = 0; i < decrypted.words.length; i++) {
@@ -33,14 +37,13 @@ const App: React.FC = () => {
       const parsed = decoded.split(',');
       const deptIdFromQr = parsed[0];
 
-      if (departmentId && departmentId !== deptIdFromQr) {
+      if (departmentId !== deptIdFromQr) {
         setError('選択した診療科とQRコード内の診療科が一致しません');
         setRestoredData({});
         return;
       }
-      setDepartmentId(deptIdFromQr);
 
-      const template = templates[deptIdFromQr];
+      const template = templates[departmentId];
       if (!template) {
         setError('未知の診療科IDです');
         return;
@@ -88,20 +91,39 @@ const App: React.FC = () => {
     alert('Copied to clipboard!');
   };
 
+  const handleDownloadTxt = () => {
+    if (!currentTemplate) return;
+    const lines = currentTemplate.fields.map((f) => `${f.label}: ${formatValue(f, restoredData[f.name] || '')}`);
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'questionnaire.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!departmentId) {
+    return (
+      <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+        <div>
+          <h1 className="mb-3">診療科を選択してください</h1>
+          <select className="form-select" value="" onChange={(e) => setDepartmentId(e.target.value)}>
+            <option value="">選択してください</option>
+            {Object.entries(departmentMap).map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mt-5">
-      <h1>QR問診票復元</h1>
-      <div className="mb-3">
-        <label className="form-label">診療科</label>
-        <select className="form-select" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-          <option value="">選択してください</option>
-          {Object.entries(departmentMap).map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <h1>QR問診票復元 - {departmentMap[departmentId]}</h1>
       <div className="mb-3">
         <label className="form-label">QRデータ</label>
         <textarea className="form-control" rows={5} value={qrData} onChange={(e) => setQrData(e.target.value)}></textarea>
@@ -126,8 +148,11 @@ const App: React.FC = () => {
               ))}
             </tbody>
           </table>
-          <button className="btn btn-info mt-3" onClick={handleCopyToClipboard}>
+          <button className="btn btn-info mt-3 me-2" onClick={handleCopyToClipboard}>
             クリップボードにコピー
+          </button>
+          <button className="btn btn-success mt-3" onClick={handleDownloadTxt}>
+            テキストをダウンロード
           </button>
         </div>
       )}
