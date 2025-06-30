@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import pako from 'pako';
-import CryptoJS from 'crypto-js';
-import * as encoding from 'encoding-japanese';
 import { departmentMap } from './templates';
 import type { Template, Question } from './templates';
+import { decryptCsv } from '../../shared/crypto';
 
 const App: React.FC = () => {
   const [qrData, setQrData] = useState('');
@@ -21,21 +19,7 @@ const App: React.FC = () => {
         setError('診療科を選択してください');
         return;
       }
-      const decrypted = CryptoJS.AES.decrypt(qrData, encryptionKey);
-      const decryptedBytes = new Uint8Array(decrypted.words.length * 4);
-      for (let i = 0; i < decrypted.words.length; i++) {
-        decryptedBytes[i * 4] = (decrypted.words[i] >> 24) & 0xff;
-        decryptedBytes[i * 4 + 1] = (decrypted.words[i] >> 16) & 0xff;
-        decryptedBytes[i * 4 + 2] = (decrypted.words[i] >> 8) & 0xff;
-        decryptedBytes[i * 4 + 3] = decrypted.words[i] & 0xff;
-      }
-      const trimmedBytes = decryptedBytes.slice(0, decrypted.sigBytes);
-      const decompressed = pako.inflate(trimmedBytes);
-      const decoded = encoding.convert(decompressed, {
-        to: 'UNICODE',
-        from: 'SJIS',
-        type: 'string',
-      });
+      const decoded = decryptCsv(qrData, encryptionKey);
       const parsed = decoded.split(',');
       const deptIdFromQr = parsed[0];
 
