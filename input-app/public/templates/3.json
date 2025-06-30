@@ -1,0 +1,112 @@
+{
+  "department_id": 3,
+  "department_name": "小児科",
+  "questions": [
+    {
+      "id": "name",
+      "label": "氏名",
+      "type": "text"
+    },
+    {
+      "id": "birthYear",
+      "label": "生年月日（年）",
+      "type": "number"
+    },
+    {
+      "id": "birthMonth",
+      "label": "月",
+      "type": "number"
+    },
+    {
+      "id": "birthDay",
+      "label": "日",
+      "type": "number"
+    },
+    {
+      "id": "age",
+      "label": "年齢",
+      "type": "number"
+    },
+    {
+      "id": "gender",
+      "label": "性別",
+      "type": "select",
+      "options": [
+        {
+          "id": "1",
+          "label": "男性"
+        },
+        {
+          "id": "2",
+          "label": "女性"
+        },
+        {
+          "id": "3",
+          "label": "その他"
+        }
+      ]
+    },
+    {
+      "id": "symptoms",
+      "label": "症状",
+      "type": "multi_select",
+      "options": [
+        {
+          "id": "3",
+          "label": "頭痛"
+        },
+        {
+          "id": "4",
+          "label": "腹痛"
+        },
+        {
+          "id": "6",
+          "label": "発熱"
+        }
+      ]
+    },
+    {
+      "id": "duration",
+      "label": "症状の期間",
+      "type": "select",
+      "options": [
+        {
+          "id": "1",
+          "label": "1日以内"
+        },
+        {
+          "id": "2",
+          "label": "2-3日"
+        },
+        {
+          "id": "3",
+          "label": "1週間以上"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "label": "既往歴",
+      "type": "multi_select",
+      "options": [
+        {
+          "id": "8",
+          "label": "高血圧"
+        },
+        {
+          "id": "1",
+          "label": "糖尿病"
+        },
+        {
+          "id": "2",
+          "label": "心臓病"
+        }
+      ]
+    },
+    {
+      "id": "freeText",
+      "label": "自由記述",
+      "type": "text"
+    }
+  ]
+}
