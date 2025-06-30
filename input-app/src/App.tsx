@@ -146,9 +146,9 @@ const App: React.FC = () => {
                     className="form-check-input"
                     type="checkbox"
                     name={field.id}
-                    value={opt.id}
+                    value={String(opt.id)}
                     onChange={handleCheckboxChange}
-                    checked={(formData[field.id] || []).includes(opt.id)}
+                    checked={(formData[field.id] || []).includes(String(opt.id))}
                   />
                   <label className="form-check-label">{opt.label}</label>
                 </div>
