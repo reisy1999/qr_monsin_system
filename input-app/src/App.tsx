@@ -3,29 +3,37 @@ import QRCode from 'qrcode';
 import pako from 'pako';
 import CryptoJS from 'crypto-js';
 import * as Encoding from 'encoding-japanese';
-import { templates, departmentMap } from './templates';
-import type { Field } from './templates';
+import { departmentMap } from './templates';
+import type { Template, Question } from './templates';
 
 const App: React.FC = () => {
   const [departmentId, setDepartmentId] = useState('');
   const [formData, setFormData] = useState<Record<string, string | string[]>>({});
   const [qrData, setQrData] = useState('');
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [loading, setLoading] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY;
 
   useEffect(() => {
-    if (!departmentId) {
+    if (!departmentId || !template) {
       setQrData('');
       return;
     }
-    const template = templates[departmentId];
-    if (!template) return;
+
     const csvData = [
       departmentId,
-      ...template.fields.map((field: Field) => {
-        const val = formData[field.name];
-        if (field.type === 'checkbox') {
+      ...template.questions.map((q: Question) => {
+        const val = formData[q.id];
+        if (q.type === 'multi_select') {
+          if (q.bitflag) {
+            const arr = Array.isArray(val) ? val : [];
+            return arr.reduce(
+              (acc, v) => acc | (1 << (parseInt(v as string, 10) - 1)),
+              0
+            );
+          }
           return Array.isArray(val) ? val.join(';') : '';
         }
         return val ?? '';
@@ -40,7 +48,7 @@ const App: React.FC = () => {
     ).toString();
 
     setQrData(encrypted);
-  }, [formData, departmentId]);
+  }, [formData, departmentId, template, encryptionKey]);
 
   useEffect(() => {
     if (qrCanvasRef.current && qrData) {
@@ -51,18 +59,33 @@ const App: React.FC = () => {
   }, [qrData]);
 
   useEffect(() => {
-    if (departmentId) {
-      const initial: Record<string, string | string[]> = {};
-      templates[departmentId].fields.forEach((f) => {
-        initial[f.name] = f.type === 'checkbox' ? [] : '';
-      });
-      setFormData(initial);
-    } else {
+    if (!departmentId) {
+      setTemplate(null);
       setFormData({});
+      return;
     }
+    setLoading(true);
+    fetch(`/templates/${departmentId}.json`)
+      .then((res) => res.json())
+      .then((data: Template) => {
+        setTemplate(data);
+        const initial: Record<string, string | string[]> = {};
+        data.questions.forEach((q) => {
+          initial[q.id] = q.type === 'multi_select' ? [] : '';
+        });
+        setFormData(initial);
+      })
+      .catch((err) => {
+        console.error(err);
+        setTemplate(null);
+        setFormData({});
+      })
+      .finally(() => setLoading(false));
   }, [departmentId]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -77,55 +100,55 @@ const App: React.FC = () => {
     }
   };
 
-  const renderField = (field: Field) => {
+  const renderField = (field: Question) => {
     switch (field.type) {
       case 'text':
       case 'number':
         return (
-          <div className="mb-3" key={field.name}>
+          <div className="mb-3" key={field.id}>
             <label className="form-label">{field.label}</label>
             <input
-              type={field.type === 'number' ? 'number' : 'text'}
+              type={field.type === 'number' ? 'number' : field.type}
               className="form-control"
-              name={field.name}
-              value={formData[field.name] || ''}
+              name={field.id}
+              value={formData[field.id] || ''}
               onChange={handleInputChange}
-              maxLength={field.name === 'freeText' ? 300 : undefined}
+              maxLength={field.id === 'freeText' ? 300 : undefined}
             />
           </div>
         );
       case 'select':
         return (
-          <div className="mb-3" key={field.name}>
+          <div className="mb-3" key={field.id}>
             <label className="form-label">{field.label}</label>
             <select
               className="form-select"
-              name={field.name}
-              value={formData[field.name] || ''}
+              name={field.id}
+              value={formData[field.id] || ''}
               onChange={handleInputChange}
             >
               {field.options?.map((opt) => (
-                <option key={opt.value} value={opt.value}>
+                <option key={opt.id} value={opt.id}>
                   {opt.label}
                 </option>
               ))}
             </select>
           </div>
         );
-      case 'checkbox':
+      case 'multi_select':
         return (
-          <div className="mb-3" key={field.name}>
+          <div className="mb-3" key={field.id}>
             <label className="form-label">{field.label}</label>
             <div>
               {field.options?.map((opt) => (
-                <div className="form-check form-check-inline" key={opt.value}>
+                <div className="form-check form-check-inline" key={opt.id}>
                   <input
                     className="form-check-input"
                     type="checkbox"
-                    name={field.name}
-                    value={opt.value}
+                    name={field.id}
+                    value={opt.id}
                     onChange={handleCheckboxChange}
-                    checked={(formData[field.name] || []).includes(opt.value)}
+                    checked={(formData[field.id] || []).includes(opt.id)}
                   />
                   <label className="form-check-label">{opt.label}</label>
                 </div>
@@ -133,12 +156,23 @@ const App: React.FC = () => {
             </div>
           </div>
         );
+      case 'date':
+        return (
+          <div className="mb-3" key={field.id}>
+            <label className="form-label">{field.label}</label>
+            <input
+              type="date"
+              className="form-control"
+              name={field.id}
+              value={formData[field.id] || ''}
+              onChange={handleInputChange}
+            />
+          </div>
+        );
       default:
         return null;
     }
   };
-
-  const currentTemplate = departmentId ? templates[departmentId] : undefined;
 
   if (!departmentId) {
     return (
@@ -165,9 +199,10 @@ const App: React.FC = () => {
   return (
     <div className="container mt-5">
       <h1>QR問診票入力 - {departmentMap[departmentId]}</h1>
-      {currentTemplate && (
+      {loading && <p>Loading...</p>}
+      {template && !loading && (
         <form>
-          {currentTemplate.fields.map((field) => renderField(field))}
+          {template.questions.map((field) => renderField(field))}
         </form>
       )}
       <div className="mt-5">

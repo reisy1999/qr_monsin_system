@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import pako from 'pako';
 import CryptoJS from 'crypto-js';
 import * as encoding from 'encoding-japanese';
-import { templates, departmentMap } from './templates';
-import type { Field } from './templates';
+import { departmentMap } from './templates';
+import type { Template, Question } from './templates';
 
 const App: React.FC = () => {
   const [qrData, setQrData] = useState('');
   const [restoredData, setRestoredData] = useState<Record<string, string>>({});
   const [departmentId, setDepartmentId] = useState('');
   const [error, setError] = useState('');
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY;
 
@@ -43,16 +45,27 @@ const App: React.FC = () => {
         return;
       }
 
-      const template = templates[departmentId];
       if (!template) {
-        setError('未知の診療科IDです');
+        setError('テンプレートの読み込みに失敗しました');
         return;
       }
 
       const dataPart = parsed.slice(1);
       const obj: Record<string, string> = {};
-      template.fields.forEach((field, idx) => {
-        obj[field.name] = dataPart[idx] || '';
+      template.questions.forEach((field, idx) => {
+        let value = dataPart[idx] || '';
+        if (field.type === 'multi_select') {
+          if (field.bitflag) {
+            const num = parseInt(value, 10);
+            const selected: string[] = [];
+            field.options?.forEach((opt) => {
+              const bit = 1 << (parseInt(opt.id as string, 10) - 1);
+              if (num & bit) selected.push(String(opt.id));
+            });
+            value = selected.join(';');
+          }
+        }
+        obj[field.id] = value;
       });
       setRestoredData(obj);
       setError('');
@@ -69,31 +82,54 @@ const App: React.FC = () => {
     setError('');
   };
 
-  const formatValue = (field: Field, value: string) => {
-    if (field.type === 'checkbox') {
+  useEffect(() => {
+    if (!departmentId) {
+      setTemplate(null);
+      setRestoredData({});
+      return;
+    }
+    setLoading(true);
+    fetch(`/templates/${departmentId}.json`)
+      .then((res) => res.json())
+      .then((data: Template) => {
+        setTemplate(data);
+        setRestoredData({});
+      })
+      .catch((err) => {
+        console.error(err);
+        setTemplate(null);
+        setRestoredData({});
+      })
+      .finally(() => setLoading(false));
+  }, [departmentId]);
+
+  const formatValue = (field: Question, value: string) => {
+    if (field.type === 'multi_select') {
       return value
         .split(';')
-        .map((v) => field.options?.find((o) => o.value === v)?.label || v)
+        .map((v) => field.options?.find((o) => String(o.id) === v)?.label || v)
         .join(', ');
     }
     if (field.type === 'select') {
-      return field.options?.find((o) => o.value === value)?.label || value;
+      return field.options?.find((o) => String(o.id) === value)?.label || value;
     }
     return value;
   };
 
-  const currentTemplate = departmentId ? templates[departmentId] : undefined;
-
   const handleCopyToClipboard = () => {
-    if (!currentTemplate) return;
-    const lines = currentTemplate.fields.map((f) => `${f.label}: ${formatValue(f, restoredData[f.name] || '')}`);
+    if (!template) return;
+    const lines = template.questions.map(
+      (f) => `${f.label}: ${formatValue(f, restoredData[f.id] || '')}`
+    );
     navigator.clipboard.writeText(lines.join('\n'));
     alert('Copied to clipboard!');
   };
 
   const handleDownloadTxt = () => {
-    if (!currentTemplate) return;
-    const lines = currentTemplate.fields.map((f) => `${f.label}: ${formatValue(f, restoredData[f.name] || '')}`);
+    if (!template) return;
+    const lines = template.questions.map(
+      (f) => `${f.label}: ${formatValue(f, restoredData[f.id] || '')}`
+    );
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -124,6 +160,7 @@ const App: React.FC = () => {
   return (
     <div className="container mt-5">
       <h1>QR問診票復元 - {departmentMap[departmentId]}</h1>
+      {loading && <p>Loading...</p>}
       <div className="mb-3">
         <label className="form-label">QRデータ</label>
         <textarea className="form-control" rows={5} value={qrData} onChange={(e) => setQrData(e.target.value)}></textarea>
@@ -135,15 +172,15 @@ const App: React.FC = () => {
         クリア
       </button>
       {error && <div className="alert alert-danger mt-3">{error}</div>}
-      {currentTemplate && Object.keys(restoredData).length > 0 && (
+      {template && Object.keys(restoredData).length > 0 && (
         <div className="mt-5">
           <h2>復元された問診データ</h2>
           <table className="table table-bordered">
             <tbody>
-              {currentTemplate.fields.map((field) => (
-                <tr key={field.name}>
+              {template.questions.map((field) => (
+                <tr key={field.id}>
                   <th>{field.label}</th>
-                  <td>{formatValue(field, restoredData[field.name] || '')}</td>
+                  <td>{formatValue(field, restoredData[field.id] || '')}</td>
                 </tr>
               ))}
             </tbody>
