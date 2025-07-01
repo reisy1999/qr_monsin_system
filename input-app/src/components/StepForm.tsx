@@ -72,6 +72,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             name={q.id}
             required={!!q.required}
             maxLength={q.maxLength}
+            placeholder={q.placeholder}
             value={(data[q.id] as string) || ''}
             onChange={handleChange}
           />
@@ -83,6 +84,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             name={q.id}
             required={!!q.required}
             maxLength={q.maxLength}
+            placeholder={q.placeholder}
             value={(data[q.id] as string) || ''}
             onChange={handleChange}
           />
@@ -97,6 +99,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             value={(data[q.id] as string) || ''}
             min={q.min}
             max={q.max}
+            placeholder={q.placeholder}
             onChange={handleChange}
           />
         );
@@ -108,6 +111,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             name={q.id}
             required={!!q.required}
             value={(data[q.id] as string) || ''}
+            placeholder={q.placeholder}
             onChange={handleChange}
           />
         );
