@@ -6,6 +6,7 @@ WORKDIR /app
 # Install frontend dependencies and build
 COPY package*.json ./
 RUN npm install
+RUN node -v && npm -v && npx tsc --noEmit
 COPY . .
 RUN npm run build
 
@@ -13,6 +14,7 @@ RUN npm run build
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm install
+RUN node -v && npm -v && npx tsc --noEmit
 COPY server .
 RUN npm run build
 
@@ -39,5 +41,11 @@ RUN npm install --omit=dev
 ENV PORT=80
 EXPOSE 80
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://localhost:$PORT/ || exit 1
+
 WORKDIR /app
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server/dist/index.js"]
