@@ -125,10 +125,11 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
           </select>
         );
       }
-      case 'multi_select':
+      case 'multi_select': {
+        const options = Array.isArray(field.options) ? field.options : [];
         return (
           <div>
-            {(Array.isArray(field.options) ? field.options : []).map((opt) => {
+            {options.map((opt) => {
               const optVal = String(opt.id);
               let checked = false;
               if (field.bitflag) {
@@ -159,6 +160,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
             )}
           </div>
         );
+      }
       default:
         return null;
     }

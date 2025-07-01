@@ -10,6 +10,17 @@ import { postQrGeneratedLog } from './api/logApi';
 import { isVisible } from './utils/isVisible';
 import ErrorBanner from './components/ErrorBanner';
 
+const validateTemplate = (tpl: Template) => {
+  tpl.questions.forEach((q) => {
+    if (
+      (q.type === 'select' || q.type === 'multi_select') &&
+      !Array.isArray(q.options)
+    ) {
+      console.warn(`❗ テンプレートの質問 ${q.id} は options が未定義です`);
+    }
+  });
+};
+
 const App: React.FC = () => {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -54,6 +65,7 @@ const App: React.FC = () => {
     fetch(`/templates/${departmentId}.json`)
       .then((res) => res.json())
       .then((data: Template) => {
+        validateTemplate(data);
         setTemplate(data);
         const init: Record<string, string | string[]> = {};
         data.questions.forEach((q) => {
