@@ -13,7 +13,6 @@
     "@types/qrcode": "^1.5.5",
     "bootstrap": "^5.3.7",
     "buffer": "^6.0.3",
-    "crypto-js": "^4.2.0",
     "encoding-japanese": "^2.2.0",
     "pako": "^2.1.0",
     "qrcode": "^1.5.4",
