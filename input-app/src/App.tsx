@@ -96,6 +96,22 @@ const App: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!template) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      const hasData = Object.values(formData).some((v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        return v !== '' && v !== '0';
+      });
+      if (!hasData) return;
+      e.preventDefault();
+      e.returnValue =
+        'Your progress will be lost. Are you sure you want to leave this page?';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [formData, template]);
+
   if (error) {
     return (
       <div className="container mt-5">
