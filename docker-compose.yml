@@ -16,8 +16,23 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./restore-app/.env
+    depends_on:
+      - restore-server
+    environment:
+      WAIT_FOR_HOST: "restore-server:3000"
     ports:
       - "5174:80"
+    networks:
+      - qr_monsin_network
+
+  restore-server:
+    build:
+      context: ./restore-server
+      dockerfile: Dockerfile
+    env_file:
+      - ./restore-server/.env
+    ports:
+      - "3000:3000"
     networks:
       - qr_monsin_network
 
