@@ -57,10 +57,19 @@ const App: React.FC = () => {
         setTemplate(data);
         const init: Record<string, string | string[]> = {};
         data.questions.forEach((q) => {
+          const def = q.defaultValue;
           if (q.type === 'multi_select') {
-            init[q.id] = q.bitflag ? '0' : [];
+            if (q.bitflag) {
+              init[q.id] = def !== undefined ? String(def) : '0';
+            } else {
+              if (def !== undefined) {
+                init[q.id] = [String(def)];
+              } else {
+                init[q.id] = [];
+              }
+            }
           } else {
-            init[q.id] = '';
+            init[q.id] = def !== undefined ? String(def) : '';
           }
         });
         setFormData(init);
