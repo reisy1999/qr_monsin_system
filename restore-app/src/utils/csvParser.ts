@@ -1,4 +1,4 @@
-import type { Template } from '../../../shared/templates';
+import type { Template } from '@shared/templates';
 
 function splitCsvLine(line: string): string[] {
   const result: string[] = [];

@@ -17,6 +17,12 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
+    /* Path mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -26,5 +32,5 @@
     "noUncheckedSideEffectImports": true
   },
   "types": ["node"],
-  "include": ["src", "src/custom.d.ts", "../shared"],
+  "include": ["src", "src/custom.d.ts", "shared"],
 }

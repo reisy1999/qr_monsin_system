@@ -4,18 +4,21 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 # Install frontend dependencies and build
-COPY package*.json ./
+COPY input-app/package*.json ./
+COPY shared ./shared
+COPY input-app/tsconfig.app.json ./
+COPY input-app/src ./src
 RUN npm install
-RUN node -v && npm -v && npx tsc --noEmit
-COPY . .
+RUN node -v && npm -v && npx tsc --project tsconfig.app.json --noEmit
+COPY input-app/. .
 RUN npm run build
 
 # Build the Express server
 WORKDIR /app/server
-COPY server/package*.json ./
+COPY input-app/server/package*.json ./
 RUN npm install
 RUN node -v && npm -v && npx tsc --noEmit
-COPY server .
+COPY input-app/server ./
 RUN npm run build
 
 # Stage 2: Run with Node
@@ -41,7 +44,7 @@ RUN npm install --omit=dev
 ENV PORT=80
 EXPOSE 80
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY input-app/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://localhost:$PORT/ || exit 1

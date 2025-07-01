@@ -2,10 +2,13 @@
 FROM node:18-alpine AS build
 WORKDIR /app
 
-COPY package*.json ./
+COPY restore-server/package*.json ./
+COPY shared ./shared
+COPY restore-server/tsconfig.json ./
+COPY restore-server/src ./src
 RUN npm install
-RUN node -v && npm -v && npx tsc --noEmit
-COPY . .
+RUN node -v && npm -v && npx tsc --project tsconfig.json --noEmit || (echo "❌ TypeScript check failed"; exit 1)
+COPY restore-server/. .
 RUN npm run build
 
 # Stage 2: runtime
@@ -20,7 +23,7 @@ RUN npm install --omit=dev
 ENV PORT=3000
 EXPOSE 3000
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY restore-server/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://localhost:$PORT/ || exit 1
 

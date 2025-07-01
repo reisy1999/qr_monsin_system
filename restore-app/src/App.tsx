@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { decryptQr } from './api';
 import { parseCsvValues, mapValuesToLabels } from './utils/csvParser';
-import type { Template } from '../../shared/templates';
+import type { Template } from '@shared/templates';
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');

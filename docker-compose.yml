@@ -3,8 +3,8 @@ version: '3.8'
 services:
   input-app:
     build:
-      context: ./input-app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./input-app/Dockerfile
     ports:
       - "5173:80"
     networks:
@@ -12,8 +12,8 @@ services:
 
   restore-app:
     build:
-      context: ./restore-app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./restore-app/Dockerfile
     env_file:
       - ./restore-app/.env
     depends_on:
@@ -27,8 +27,8 @@ services:
 
   restore-server:
     build:
-      context: ./restore-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./restore-server/Dockerfile
     env_file:
       - ./restore-server/.env
     ports:
