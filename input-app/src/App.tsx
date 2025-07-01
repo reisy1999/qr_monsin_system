@@ -9,13 +9,113 @@ const App: React.FC = () => {
   const [formData, setFormData] = useState<Record<string, string | string[]>>({});
   const [qrData, setQrData] = useState('');
   const [template, setTemplate] = useState<Template | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY;
 
+  const isFieldVisible = React.useCallback(
+    (field: Question, data: Record<string, string | string[]>) => {
+      if (field.conditional_on && field.conditional_value) {
+        const val = data[field.conditional_on];
+        if (Array.isArray(val)) {
+          return val.some((v) => field.conditional_value?.map(String).includes(String(v)));
+        }
+        return field.conditional_value.map(String).includes(String(val));
+      }
+      return true;
+    },
+    []
+  );
+
+  const validateField = React.useCallback(
+    (
+      field: Question,
+      value: string | string[],
+      data: Record<string, string | string[]>
+    ): string | null => {
+      if (!isFieldVisible(field, data)) return null;
+
+    if (field.required) {
+      if (field.type === 'multi_select') {
+        if (!Array.isArray(value) || value.length === 0) {
+          return `${field.label} is required.`;
+        }
+      } else if (value === '' || value === undefined) {
+        return `${field.label} is required.`;
+      }
+    }
+
+    if (field.type === 'text') {
+      if (field.maxLength !== undefined && typeof value === 'string' && value.length > field.maxLength) {
+        return `${field.label} must be at most ${field.maxLength} characters.`;
+      }
+      if (field.validationRegex) {
+        const re = new RegExp(field.validationRegex);
+        if (typeof value === 'string' && value && !re.test(value)) {
+          return `${field.label} is invalid.`;
+        }
+      }
+    }
+
+    if (field.type === 'number') {
+      if (value !== '') {
+        const num = Number(value);
+        if (Number.isNaN(num)) {
+          return `${field.label} must be a number.`;
+        }
+        if (field.min !== undefined && num < field.min) {
+          return `${field.label} must be >= ${field.min}.`;
+        }
+        if (field.max !== undefined && num > field.max) {
+          return `${field.label} must be <= ${field.max}.`;
+        }
+      }
+    }
+
+    if (field.type === 'select') {
+      const options = field.options?.map((o) => String(o.id)) || [];
+      if (value && !options.includes(String(value))) {
+        return `${field.label} has invalid selection.`;
+      }
+    }
+
+    if (field.type === 'multi_select') {
+      const options = field.options?.map((o) => String(o.id)) || [];
+      if (Array.isArray(value)) {
+        const invalid = value.find((v) => !options.includes(String(v)));
+        if (invalid) return `${field.label} has invalid selection.`;
+      }
+    }
+
+    return null;
+  },
+    [isFieldVisible]
+  );
+
+  const validateForm = React.useCallback(
+    (tmpl: Template, data: Record<string, string | string[]>) => {
+      const errs: Record<string, string> = {};
+      tmpl.questions.forEach((q) => {
+        const err = validateField(q, data[q.id], data);
+        if (err) errs[q.id] = err;
+      });
+      return errs;
+    },
+    [validateField]
+  );
+
   useEffect(() => {
     if (!departmentId || !template) {
+      setQrData('');
+      setErrors({});
+      return;
+    }
+
+    const errs = validateForm(template, formData);
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
       setQrData('');
       return;
     }
@@ -41,7 +141,7 @@ const App: React.FC = () => {
     const encrypted = encryptCsv(csvData, encryptionKey);
 
     setQrData(encrypted);
-  }, [formData, departmentId, template, encryptionKey]);
+  }, [formData, departmentId, template, encryptionKey, validateForm]);
 
   useEffect(() => {
     if (qrCanvasRef.current && qrData) {
@@ -64,7 +164,13 @@ const App: React.FC = () => {
         setTemplate(data);
         const initial: Record<string, string | string[]> = {};
         data.questions.forEach((q) => {
-          initial[q.id] = q.type === 'multi_select' ? [] : '';
+          if (q.type === 'multi_select') {
+            initial[q.id] = Array.isArray(q.defaultValue)
+              ? (q.defaultValue as string[])
+              : [];
+          } else {
+            initial[q.id] = (q.defaultValue as string) ?? '';
+          }
         });
         setFormData(initial);
       })
@@ -94,6 +200,8 @@ const App: React.FC = () => {
   };
 
   const renderField = (field: Question) => {
+    if (!isFieldVisible(field, formData)) return null;
+    const errorMsg = errors[field.id];
     switch (field.type) {
       case 'text':
       case 'number':
@@ -106,8 +214,12 @@ const App: React.FC = () => {
               name={field.id}
               value={formData[field.id] || ''}
               onChange={handleInputChange}
-              maxLength={field.id === 'freeText' ? 300 : undefined}
+              placeholder={field.placeholder}
+              maxLength={field.maxLength}
+              min={field.min}
+              max={field.max}
             />
+            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
           </div>
         );
       case 'select':
@@ -126,6 +238,7 @@ const App: React.FC = () => {
                 </option>
               ))}
             </select>
+            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
           </div>
         );
       case 'multi_select':
@@ -147,6 +260,7 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
+            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
           </div>
         );
       case 'date':
@@ -159,7 +273,9 @@ const App: React.FC = () => {
               name={field.id}
               value={formData[field.id] || ''}
               onChange={handleInputChange}
+              placeholder={field.placeholder}
             />
+            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
           </div>
         );
       default:
