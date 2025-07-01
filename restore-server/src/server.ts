@@ -59,7 +59,13 @@ app.post('/api/decrypt', (req, res) => {
     res.json({ csv });
   } catch (err) {
     logger.error(err);
-    res.status(400).json({ error: '復元に失敗しました。再度お試しください。' });
+    let message =
+      'このQRコードは読み取れません。QRコードが欠けていないか、有効なものか確認してください。';
+    if ((err as any)?.code === 'ERR_OSSL_EVP_BAD_DECRYPT') {
+      message =
+        '復号に失敗しました。有効期間外のQRコードである可能性があります。患者様にご確認ください。';
+    }
+    res.status(400).json({ error: message });
   }
 });
 
