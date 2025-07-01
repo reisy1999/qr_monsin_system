@@ -3,8 +3,8 @@ version: '3.8'
 services:
   input-app:
     build:
-      context: ./input-app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: input-app/Dockerfile
     ports:
       - "5173:80"
     networks:

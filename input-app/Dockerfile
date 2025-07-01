@@ -1,52 +1,31 @@
-# Stage 1: Build the React application
+# Stage 1: Build the application
 FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Install frontend dependencies and build
-COPY package*.json tsconfig*.json ./
-COPY ../shared ./shared
+# Copy only package files first
+COPY input-app/package*.json ./
 RUN npm install
-# Copy sources for type checking
-COPY src ./src
-RUN node -v && npm -v
-RUN ls -al
-RUN ls -al shared || echo "\u26A0\uFE0F /app/shared not found"
-RUN test -f tsconfig.json && cat tsconfig.json || (echo "\u274C tsconfig.json not found in input-app"; exit 1)
 
-# Print the resolved TypeScript configuration
-RUN npx tsc --showConfig || echo "\u26A0\uFE0F tsc config issue"
-RUN npx tsc --listFiles --noEmit || echo "\u26A0\uFE0F No files to compile"
-RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconfig.json"; exit 1)
-
-# List the files included in compilation
-RUN npx tsc --project tsconfig.json --listFiles --noEmit || (echo "\u26A0\uFE0F No files found for compilation"; exit 1)
-
-# Run TypeScript check without emitting files
+# Add shared folder so that tsconfig.app.json can include it
 COPY ../shared ./shared
-RUN npx tsc --project tsconfig.json --noEmit || (echo "\u274C TypeScript check failed"; exit 1)
-COPY . .
+
+# Type check
+RUN npx tsc --project tsconfig.json --noEmit
+
+# Now copy full source after type check passes
+COPY input-app .
+
 RUN npm run build
 
 # Build the Express server
 WORKDIR /app/server
-COPY server/package*.json server/tsconfig*.json ./
+COPY input-app/server/package*.json input-app/server/tsconfig*.json ./
 RUN npm install
 # Copy server sources for type checking
-COPY server/*.ts ./
-RUN node -v && npm -v
-# Confirm tsconfig.json exists and is readable
-RUN test -f tsconfig.json && cat tsconfig.json || (echo "\u274C tsconfig.json not found in input-app server"; exit 1)
-
-# Print the resolved TypeScript configuration
-RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconfig.json"; exit 1)
-
-# List the files included in compilation
-RUN npx tsc --project tsconfig.json --listFiles --noEmit || (echo "\u26A0\uFE0F No files found for compilation"; exit 1)
-
-# Run TypeScript check without emitting files
-RUN npx tsc --project tsconfig.json --noEmit || (echo "\u274C TypeScript check failed"; exit 1)
-COPY server .
+COPY input-app/server/*.ts ./
+RUN npx tsc --project tsconfig.json --noEmit
+COPY input-app/server .
 RUN npm run build
 
 # Stage 2: Run with Node
