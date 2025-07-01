@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { departmentMap } from '../../shared/templates';
 import type { Template } from '../../shared/templates';
-import { FormRenderer } from './components/FormRenderer';
+import StepForm from './components/StepForm';
 import { buildCsv } from './utils/csvBuilder';
 import { fetchPublicKey } from './utils/fetchKey';
 import { encodeAndEncrypt } from './logic/encodeAndEncrypt';
@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [departmentId, setDepartmentId] = useState('');
   const [template, setTemplate] = useState<Template | null>(null);
   const [formData, setFormData] = useState<Record<string, string | string[]>>({});
+  const [step, setStep] = useState(0);
   const [qrGenerated, setQrGenerated] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -32,6 +33,7 @@ const App: React.FC = () => {
     if (!departmentId) {
       setTemplate(null);
       setFormData({});
+      setStep(0);
       return;
     }
     fetch(`/templates/${departmentId}.json`)
@@ -47,6 +49,7 @@ const App: React.FC = () => {
           }
         });
         setFormData(init);
+        setStep(0);
       })
       .catch(() =>
         setError('テンプレートの取得に失敗しました。しばらくしてから再度お試しください。')
@@ -118,9 +121,31 @@ const App: React.FC = () => {
     <div className="container mt-5">
       <h1>QR問診票入力 - {departmentMap[departmentId]}</h1>
       {template && (
-        <form onSubmit={handleSubmit}>
-          <FormRenderer template={template} data={formData} onChange={handleChange} />
-          <button type="submit" className="btn btn-primary mt-3">QR生成</button>
+        <form onSubmit={handleSubmit} className="d-flex flex-column align-items-center">
+          <StepForm template={template} data={formData} onChange={handleChange} step={step} />
+          <div className="d-flex justify-content-between w-100 mt-3">
+            <button
+              type="button"
+              className="btn btn-secondary btn-lg"
+              disabled={step === 0}
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+            >
+              戻る
+            </button>
+            {step < template.questions.length - 1 ? (
+              <button
+                type="button"
+                className="btn btn-primary btn-lg"
+                onClick={() => setStep((s) => Math.min(template.questions.length - 1, s + 1))}
+              >
+                次へ
+              </button>
+            ) : (
+              <button type="submit" className="btn btn-primary btn-lg">
+                確認してQR生成
+              </button>
+            )}
+          </div>
         </form>
       )}
       {qrGenerated && <canvas ref={canvasRef} className="mt-4" />}
