@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { departmentMap } from './templates';
 import type { Template } from './templates';
 import { FormRenderer } from './components/FormRenderer';
 import { buildCsv } from './utils/csvBuilder';
 import { fetchPublicKey } from './utils/fetchKey';
+import { encodeAndEncrypt } from './logic/encodeAndEncrypt';
+import { generateQrFromEncrypted } from './logic/qrGenerator';
+import { postQrGeneratedLog } from './api/logApi';
+import ErrorBanner from './components/ErrorBanner';
 
 const App: React.FC = () => {
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -11,13 +15,14 @@ const App: React.FC = () => {
   const [departmentId, setDepartmentId] = useState('');
   const [template, setTemplate] = useState<Template | null>(null);
   const [formData, setFormData] = useState<Record<string, string | string[]>>({});
-  const [csv, setCsv] = useState('');
+  const [qrGenerated, setQrGenerated] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     fetchPublicKey()
       .then((key) => setPublicKey(key))
       .catch(() =>
-        setError('通信に失敗しました。オフライン環境での利用はできません。')
+        setError('通信に失敗しました。オフライン環境ではご利用いただけません。')
       );
   }, []);
 
@@ -38,7 +43,7 @@ const App: React.FC = () => {
         setFormData(init);
       })
       .catch(() =>
-        setError('通信に失敗しました。オフライン環境での利用はできません。')
+        setError('テンプレートの取得に失敗しました。しばらくしてから再度お試しください。')
       );
   }, [departmentId]);
 
@@ -46,17 +51,29 @@ const App: React.FC = () => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!template) return;
+    if (!template || !publicKey) return;
+    setError('');
+    setQrGenerated(false);
     const csvStr = buildCsv(departmentId, template, formData);
-    setCsv(csvStr);
+    try {
+      const encrypted = await encodeAndEncrypt(csvStr, publicKey);
+      if (canvasRef.current) {
+        await generateQrFromEncrypted(encrypted, canvasRef.current);
+        await postQrGeneratedLog(template.version);
+        setQrGenerated(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('QRコードの生成に失敗しました。通信環境をご確認ください。');
+    }
   };
 
   if (error) {
     return (
       <div className="container mt-5">
-        <p className="text-danger">{error}</p>
+        <ErrorBanner message={error} />
       </div>
     );
   }
@@ -95,17 +112,10 @@ const App: React.FC = () => {
       {template && (
         <form onSubmit={handleSubmit}>
           <FormRenderer template={template} data={formData} onChange={handleChange} />
-          <button type="submit" className="btn btn-primary mt-3">
-            CSV生成
-          </button>
+          <button type="submit" className="btn btn-primary mt-3">QR生成</button>
         </form>
       )}
-      {csv && (
-        <div className="mt-4">
-          <h2>CSV</h2>
-          <textarea className="form-control" rows={5} readOnly value={csv}></textarea>
-        </div>
-      )}
+      {qrGenerated && <canvas ref={canvasRef} className="mt-4" />}
     </div>
   );
 };
