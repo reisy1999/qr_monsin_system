@@ -1,41 +1,54 @@
-# Questionnaire Template Schema
+# 📄 問診テンプレートスキーマ（v2 草案）
 
-This document defines the JSON structure used by both **input-app** and **restore-app** to render and interpret department-specific questionnaires. Each department has a template file located at `/templates/DEPT_ID.json`.
+このドキュメントは、`input-app` および `restore-app` で使用される、診療科別問診テンプレートの JSON 構造を定義します。
+ステップ式UI、QRコード制約、bitflag圧縮、条件付き表示といった仕様を前提に再設計されたものです。
 
-## Top-Level Fields
+各テンプレートは `/templates/DEPT_ID.json` に配置されます。
 
-- `department_id` (number): Unique identifier for the department.
-- `department_name` (string): Human-readable department name.
-- `version` (string): Template or schema version.
-- `max_payload_bytes` (number, optional): Recommended upper limit for the encoded QR payload size.
-- `questions` (array of Question objects): List of questions to present in order.
+---
 
-## Question Object Properties
+## 📌 トップレベルの項目
 
-Each element in `questions` describes a single field in the questionnaire. All IDs must be unique within the template.
+| プロパティ               | 型       | 説明                          |
+| ------------------- | ------- | --------------------------- |
+| `department_id`     | 数値      | 診療科を一意に識別するID。              |
+| `department_name`   | 文字列     | 人間が読める診療科名。                 |
+| `version`           | 文字列     | テンプレートバージョン。                |
+| `max_payload_bytes` | 数値（省略可） | QRエンコード後の推奨最大バイト数。超過時は警告表示。 |
+| `questions`         | 配列      | 表示順に並んだ質問オブジェクトの配列。         |
 
-- `id` (string): Unique question identifier.
-- `label` (string): Text shown to the user.
-- `type` ("text" | "number" | "date" | "select" | "multi_select"): Field type.
-- `options` (array of `{ id: number, label: string }`): Required when `type` is `select` or `multi_select`.
-- `bitflag` (boolean, optional): For `multi_select`; encode selections as a bitmask when `true`.
-- `required` (boolean): Whether a value is mandatory.
-- `maxLength` (number, optional): Maximum characters for `text` fields.
-- `min` / `max` (number, optional): Numeric bounds for `number` fields.
-- `validationRegex` (string, optional): Additional validation pattern.
-- `conditional_on` (string, optional): ID of another question that triggers this one.
-- `conditional_value` (array, optional): Values that make this question visible.
-- `placeholder` (string, optional): Hint text shown in input.
-- `defaultValue` (string or number, optional): Initial value displayed.
-- `section` (string, optional): Logical grouping label.
+---
 
-## Example Template
+## 🧩 Questionオブジェクトのプロパティ
+
+テンプレート内でのIDはすべて一意である必要があります。ステップ式UIでは、順番通りに表示・スキップされます。
+
+| プロパティ               | 型                                                                         | 説明                                                        |
+| ------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `id`                | 文字列                                                                       | 質問の一意な識別子。                                                |
+| `label`             | 文字列                                                                       | ユーザーに表示される質問文。復元時CSVの見出しにも使用。                             |
+| `type`              | "text" \| "textarea" \| "number" \| "date" \| "select" \| "multi\_select" | 入力形式。textareaは複数行自由記述。                                    |
+| `options`           | 配列（`{ id: 数値, label: 文字列 }`）                                              | select や multi\_select タイプで必須。                            |
+| `bitflag`           | 真偽値（省略可）                                                                  | multi\_select の圧縮方式。`true` の場合、idは2進ビット列として扱われる（上限32個推奨）。 |
+| `required`          | 真偽値                                                                       | 入力が必須かどうか。条件未満足の場合は無視される。                                 |
+| `maxLength`         | 数値（省略可）                                                                   | text/textarea に適用される最大文字数（推奨: 300以下）。                     |
+| `min` / `max`       | 数値（省略可）                                                                   | number フィールドの最小値／最大値。                                     |
+| `validationRegex`   | 文字列（省略可）                                                                  | 入力値に適用する正規表現（文字列として指定）。                                   |
+| `conditional_on`    | 文字列（省略可）                                                                  | 表示条件となる質問の `id`。                                          |
+| `conditional_value` | 配列（省略可）                                                                   | conditional\_on の質問の値がこの配列に含まれる場合のみ表示される。bitflag は現状非対応。  |
+| `placeholder`       | 文字列（省略可）                                                                  | 入力欄に表示されるヒント。現行未使用、将来的にUIに追加予定。                           |
+| `defaultValue`      | 任意型（省略可）                                                                  | 初期表示される値。現行未使用、使用時は仕様に準拠すること。                             |
+| `section`           | 文字列（省略可）                                                                  | 質問の論理的グループ名。画面表示上は使用しないがCSV構造に反映可。                        |
+
+---
+
+## 💡 テンプレート例（簡略）
 
 ```json
 {
   "department_id": 1,
   "department_name": "内科",
-  "version": "1.0",
+  "version": "2.0",
   "max_payload_bytes": 1600,
   "questions": [
     {
@@ -58,13 +71,24 @@ Each element in `questions` describes a single field in the questionnaire. All I
     {
       "id": "q3",
       "label": "補足コメント",
-      "type": "text",
-      "maxLength": 50,
+      "type": "textarea",
+      "maxLength": 100,
       "conditional_on": "q2",
-      "conditional_value": [99]
+      "conditional_value": [99]  
     }
   ]
 }
 ```
 
-This schema is designed to be extensible and consistent across all departments. Templates adhering to this structure allow both applications to validate input, enforce limits, and display conditional fields reliably.
+---
+
+## 🎯 注意事項と設計ポリシー
+
+* 各質問は **順番通りに表示** されます。条件に合致しない質問はスキップされます。
+* `bitflag` を使う場合、`options[].id` は 1, 2, 4, 8, ... のようなビット値で構成してください。
+* `conditional_on` は select / multi\_select（非bitflag）でのみ使用可能です。
+* placeholder や defaultValue は現時点では未使用ですが、将来的にUI反映される可能性があります。
+* `max_payload_bytes` はエンコード後の目安であり、復元アプリがサイズ超過を検出する運用が推奨されます。
+
+このテンプレート構造に従うことで、質問ごとの表示制御、QR制限対応、UI設計との統一が可能になります。
+
