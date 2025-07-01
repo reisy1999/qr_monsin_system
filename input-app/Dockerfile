@@ -25,6 +25,9 @@ COPY --from=build /app/dist ./dist
 
 # Copy built server and resources
 COPY --from=build /app/server/dist ./server/dist
+
+# Place frontend build where the Express server expects it
+COPY --from=build /app/dist ./server/dist
 COPY --from=build /app/server/package.json ./server/package.json
 COPY --from=build /app/server/package-lock.json ./server/package-lock.json
 COPY --from=build /app/server/keys ./server/keys
