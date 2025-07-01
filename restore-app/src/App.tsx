@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { decodeAndDecrypt } from './logic/decodeAndDecrypt';
+import { decryptQr } from './api';
 import { parseCsv } from './utils/csvParser';
 
 const App: React.FC = () => {
@@ -7,9 +7,9 @@ const App: React.FC = () => {
   const [result, setResult] = useState<{ label: string; value: string }[]>([]);
   const [error, setError] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
-      const csv = decodeAndDecrypt(input.trim());
+      const csv = await decryptQr(input.trim());
       const parsed = parseCsv(csv);
       setResult(parsed);
       setError('');
