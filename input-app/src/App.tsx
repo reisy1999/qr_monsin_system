@@ -40,7 +40,11 @@ const App: React.FC = () => {
         setTemplate(data);
         const init: Record<string, string | string[]> = {};
         data.questions.forEach((q) => {
-          init[q.id] = q.type === 'checkbox' ? [] : '';
+          if (q.type === 'multi_select') {
+            init[q.id] = q.bitflag ? '0' : [];
+          } else {
+            init[q.id] = '';
+          }
         });
         setFormData(init);
       })
