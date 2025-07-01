@@ -6,3 +6,4 @@ restore-app/node_modules/.tmp/
 **/node_modules/
 restore-server/dist/
 server/dist/
+input-app/server/dist/

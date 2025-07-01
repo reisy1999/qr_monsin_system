@@ -3,21 +3,38 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
+# Install frontend dependencies and build
 COPY package*.json ./
-
 RUN npm install
-
 COPY . .
-
 RUN npm run build
 
-# Stage 2: Serve the application with Nginx
-FROM nginx:1.21-alpine
+# Build the Express server
+WORKDIR /app/server
+COPY server/package*.json ./
+RUN npm install
+COPY server .
+RUN npm run build
 
-COPY --from=build /app/dist /usr/share/nginx/html
+# Stage 2: Run with Node
+FROM node:18-alpine
+WORKDIR /app
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built frontend
+COPY --from=build /app/dist ./dist
 
+# Copy built server and resources
+COPY --from=build /app/server/dist ./server/dist
+COPY --from=build /app/server/package.json ./server/package.json
+COPY --from=build /app/server/package-lock.json ./server/package-lock.json
+COPY --from=build /app/server/keys ./server/keys
+COPY --from=build /app/server/templates ./server/templates
+
+WORKDIR /app/server
+RUN npm install --omit=dev
+
+ENV PORT=80
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+CMD ["node", "server/dist/index.js"]
