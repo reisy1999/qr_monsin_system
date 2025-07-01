@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export function decryptCsv(data: string, _key: string): string {
   try {
     const binary = atob(data);
