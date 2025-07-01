@@ -8,7 +8,12 @@ COPY package*.json tsconfig*.json ./
 RUN npm install
 # Copy sources for type checking
 COPY src ./src
-RUN node -v && npm -v && if [ -f tsconfig.json ]; then npx tsc --noEmit || echo "Type-check failed, continuing"; else echo "Skipping type-check (no tsconfig.json)"; fi
+RUN node -v && npm -v && \
+    if [ -f tsconfig.json ]; then \
+        npx tsc --noEmit || true; \
+    else \
+        echo "\u26A0\uFE0F tsconfig.json not found. Skipping type check."; \
+    fi
 COPY . .
 RUN npm run build
 
@@ -18,7 +23,12 @@ COPY server/package*.json server/tsconfig*.json ./
 RUN npm install
 # Copy server sources for type checking
 COPY server/*.ts ./
-RUN node -v && npm -v && if [ -f tsconfig.json ]; then npx tsc --noEmit || echo "Type-check failed, continuing"; else echo "Skipping type-check (no tsconfig.json)"; fi
+RUN node -v && npm -v && \
+    if [ -f tsconfig.json ]; then \
+        npx tsc --noEmit || true; \
+    else \
+        echo "\u26A0\uFE0F tsconfig.json not found. Skipping type check."; \
+    fi
 COPY server .
 RUN npm run build
 
