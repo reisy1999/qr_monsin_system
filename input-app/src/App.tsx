@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { departmentMap } from './templates';
-import type { Template } from './templates';
+import { departmentMap } from '../../shared/templates';
+import type { Template } from '../../shared/templates';
 import { FormRenderer } from './components/FormRenderer';
 import { buildCsv } from './utils/csvBuilder';
 import { fetchPublicKey } from './utils/fetchKey';

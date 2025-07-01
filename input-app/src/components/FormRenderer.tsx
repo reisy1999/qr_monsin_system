@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Template, Question } from '../templates';
+import type { Template, Question } from '../../../shared/templates';
 
 interface Props {
   template: Template;
