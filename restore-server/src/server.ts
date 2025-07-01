@@ -24,6 +24,16 @@ const logger = pino(
   ])
 );
 
+app.use((req, _res, next) => {
+  logger.info({
+    ip: req.ip,
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl,
+    userAgent: req.get('user-agent')
+  });
+  next();
+});
+
 app.post('/api/decrypt', (req, res) => {
   const data = req.body?.data;
   if (typeof data !== 'string') {
