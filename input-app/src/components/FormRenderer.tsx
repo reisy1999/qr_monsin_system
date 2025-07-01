@@ -8,6 +8,35 @@ interface Props {
 }
 
 export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
+  const isVisible = (q: Question) => {
+    if (!q.conditional_on || !q.conditional_value) return true;
+    const target = data[q.conditional_on];
+    if (Array.isArray(target)) {
+      return target.some((v) => q.conditional_value!.includes(v));
+    }
+    return q.conditional_value.includes(target as string | number);
+  };
+
+  const hasError = (q: Question) => {
+    const val = data[q.id];
+    if (val === '' || (Array.isArray(val) && val.length === 0)) return false;
+    if (q.validationRegex && typeof val === 'string') {
+      try {
+        if (!new RegExp(q.validationRegex).test(val)) return true;
+      } catch {
+        // ignore invalid regex
+      }
+    }
+    if (q.type === 'number') {
+      const num = Number(val);
+      if (q.min !== undefined && num < q.min) return true;
+      if (q.max !== undefined && num > q.max) return true;
+    }
+    if ((q.type === 'text' || q.type === 'textarea') && typeof val === 'string') {
+      if (q.maxLength !== undefined && val.length > q.maxLength) return true;
+    }
+    return false;
+  };
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -33,9 +62,10 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
         return (
           <input
             type="text"
-            className="form-control"
+            className={`form-control${hasError(field) ? ' is-invalid' : ''}`}
             name={field.id}
             required={!!field.required}
+            maxLength={field.maxLength}
             value={(data[field.id] as string) || ''}
             onChange={handleChange}
           />
@@ -43,7 +73,32 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
       case 'textarea':
         return (
           <textarea
-            className="form-control"
+            className={`form-control${hasError(field) ? ' is-invalid' : ''}`}
+            name={field.id}
+            required={!!field.required}
+            maxLength={field.maxLength}
+            value={(data[field.id] as string) || ''}
+            onChange={handleChange}
+          />
+        );
+      case 'number':
+        return (
+          <input
+            type="number"
+            className={`form-control${hasError(field) ? ' is-invalid' : ''}`}
+            name={field.id}
+            required={!!field.required}
+            value={(data[field.id] as string) || ''}
+            min={field.min}
+            max={field.max}
+            onChange={handleChange}
+          />
+        );
+      case 'date':
+        return (
+          <input
+            type="date"
+            className={`form-control${hasError(field) ? ' is-invalid' : ''}`}
             name={field.id}
             required={!!field.required}
             value={(data[field.id] as string) || ''}
@@ -53,7 +108,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
       case 'select':
         return (
           <select
-            className="form-select"
+            className={`form-select${hasError(field) ? ' is-invalid' : ''}`}
             name={field.id}
             required={!!field.required}
             value={(data[field.id] as string) || ''}
@@ -88,6 +143,35 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
                 </div>
               );
             })}
+            {hasError(field) && (
+              <div className="invalid-feedback d-block">入力が不正です</div>
+            )}
+          </div>
+        );
+      case 'multi_select':
+        return (
+          <div>
+            {field.options?.map((opt) => {
+              const checked = Array.isArray(data[field.id])
+                ? (data[field.id] as string[]).includes(String(opt.id))
+                : false;
+              return (
+                <div className="form-check form-check-inline" key={opt.id}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    name={field.id}
+                    value={String(opt.id)}
+                    checked={checked}
+                    onChange={handleChange}
+                  />
+                  <label className="form-check-label">{opt.label}</label>
+                </div>
+              );
+            })}
+            {hasError(field) && (
+              <div className="invalid-feedback d-block">入力が不正です</div>
+            )}
           </div>
         );
       default:
@@ -97,12 +181,14 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
 
   return (
     <div>
-      {template.questions.map((q) => (
-        <div className="mb-3" key={q.id}>
-          <label className="form-label">{q.label}</label>
-          {renderField(q)}
-        </div>
-      ))}
+      {template.questions.map((q) =>
+        isVisible(q) ? (
+          <div className="mb-3" key={q.id}>
+            <label className="form-label">{q.label}</label>
+            {renderField(q)}
+          </div>
+        ) : null
+      )}
     </div>
   );
 };

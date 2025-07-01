@@ -41,11 +41,12 @@ app.get('/templates/:id.json', async (req, res) => {
   try {
     const content = await fsp.readFile(filePath, 'utf-8');
     res.type('application/json').send(content);
-  } catch (err: any) {
-    if (err.code === 'ENOENT') {
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException;
+    if (e.code === 'ENOENT') {
       res.status(404).json({ error: 'Template not found' });
     } else {
-      logger.error(err);
+      logger.error(e);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
