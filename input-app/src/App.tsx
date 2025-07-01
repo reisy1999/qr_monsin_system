@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { departmentMap } from './templates';
 import type { Template, Question } from './templates';
-import { encryptCsv } from '../../shared/crypto';
+import { encrypt } from './shared/crypto';
 
 const App: React.FC = () => {
   const [departmentId, setDepartmentId] = useState('');
@@ -20,7 +20,9 @@ const App: React.FC = () => {
       if (field.conditional_on && field.conditional_value) {
         const val = data[field.conditional_on];
         if (Array.isArray(val)) {
-          return val.some((v) => field.conditional_value?.map(String).includes(String(v)));
+          return val.some((v: string | number) =>
+            field.conditional_value?.map(String).includes(String(v))
+          );
         }
         return field.conditional_value.map(String).includes(String(val));
       }
@@ -84,7 +86,7 @@ const App: React.FC = () => {
     if (field.type === 'multi_select') {
       const options = field.options?.map((o) => String(o.id)) || [];
       if (Array.isArray(value)) {
-        const invalid = value.find((v) => !options.includes(String(v)));
+        const invalid = value.find((v: string | number) => !options.includes(String(v)));
         if (invalid) return `${field.label} has invalid selection.`;
       }
     }
@@ -97,7 +99,7 @@ const App: React.FC = () => {
   const validateForm = React.useCallback(
     (tmpl: Template, data: Record<string, string | string[]>) => {
       const errs: Record<string, string> = {};
-      tmpl.questions.forEach((q) => {
+        tmpl.questions.forEach((q: Question) => {
         const err = validateField(q, data[q.id], data);
         if (err) errs[q.id] = err;
       });
@@ -127,10 +129,10 @@ const App: React.FC = () => {
         if (q.type === 'multi_select') {
           if (q.bitflag) {
             const arr = Array.isArray(val) ? val : [];
-            return arr.reduce(
-              (acc, v) => acc | (1 << (parseInt(v as string, 10) - 1)),
-              0
-            );
+              return arr.reduce(
+                (acc, v: string) => acc | (1 << (parseInt(v as string, 10) - 1)),
+                0
+              );
           }
           return Array.isArray(val) ? val.join(';') : '';
         }
@@ -138,7 +140,7 @@ const App: React.FC = () => {
       }),
     ].join(',');
 
-    const encrypted = encryptCsv(csvData, encryptionKey);
+    const encrypted = encrypt(csvData);
 
     setQrData(encrypted);
   }, [formData, departmentId, template, encryptionKey, validateForm]);
@@ -163,7 +165,7 @@ const App: React.FC = () => {
       .then((data: Template) => {
         setTemplate(data);
         const initial: Record<string, string | string[]> = {};
-        data.questions.forEach((q) => {
+          data.questions.forEach((q: Question) => {
           if (q.type === 'multi_select') {
             initial[q.id] = Array.isArray(q.defaultValue)
               ? (q.defaultValue as string[])
@@ -195,7 +197,7 @@ const App: React.FC = () => {
     if (checked) {
       setFormData({ ...formData, [name]: [...current, value] });
     } else {
-      setFormData({ ...formData, [name]: current.filter((v) => v !== value) });
+      setFormData({ ...formData, [name]: current.filter((v: string) => v !== value) });
     }
   };
 
@@ -232,7 +234,7 @@ const App: React.FC = () => {
               value={formData[field.id] || ''}
               onChange={handleInputChange}
             >
-              {field.options?.map((opt) => (
+              {field.options?.map((opt: any) => (
                 <option key={opt.id} value={opt.id}>
                   {opt.label}
                 </option>
@@ -246,7 +248,7 @@ const App: React.FC = () => {
           <div className="mb-3" key={field.id}>
             <label className="form-label">{field.label}</label>
             <div>
-              {field.options?.map((opt) => (
+              {field.options?.map((opt: any) => (
                 <div className="form-check form-check-inline" key={opt.id}>
                   <input
                     className="form-check-input"
@@ -291,7 +293,8 @@ const App: React.FC = () => {
           <select
             className="form-select"
             value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setDepartmentId(e.target.value)}
           >
             <option value="">選択してください</option>
             {Object.entries(departmentMap).map(([id, name]) => (
@@ -311,7 +314,7 @@ const App: React.FC = () => {
       {loading && <p>Loading...</p>}
       {template && !loading && (
         <form>
-          {template.questions.map((field) => renderField(field))}
+            {template.questions.map((field: Question) => renderField(field))}
         </form>
       )}
       <div className="mt-5">
