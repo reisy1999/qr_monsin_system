@@ -25,6 +25,16 @@ const logger = pino(
 
 app.use(express.json());
 
+app.use((req, _res, next) => {
+  logger.info({
+    ip: req.ip,
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl,
+    userAgent: req.get('user-agent')
+  });
+  next();
+});
+
 app.get('/publicKey', async (_req, res) => {
   try {
     const keyPath = path.join(__dirname, 'keys', 'public.pem');
