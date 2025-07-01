@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { departmentMap } from '../../shared/templates';
-import type { Template } from '../../shared/templates';
+import { departmentMap } from '@shared/templates';
+import type { Template } from '@shared/templates';
 import StepForm from './components/StepForm';
 import { buildCsv } from './utils/csvBuilder';
 import { fetchPublicKey } from './utils/fetchKey';
@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [qrGenerated, setQrGenerated] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const visibleQuestions = template
+  const visibleQuestions = template && template.questions
     ? template.questions.filter((q) => isVisible(q, formData))
     : [];
 

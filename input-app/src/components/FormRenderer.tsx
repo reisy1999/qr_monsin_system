@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Template, Question } from '../../../shared/templates';
+import type { Template, Question } from '@shared/templates';
 import { isVisible } from '../utils/isVisible';
 
 interface Props {

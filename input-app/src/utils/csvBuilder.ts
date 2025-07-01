@@ -1,4 +1,4 @@
-import type { Template, Question } from '../../../shared/templates';
+import type { Template, Question } from '@shared/templates';
 
 function escapeCsv(value: string): string {
   if (/[,\n"]/.test(value)) {
