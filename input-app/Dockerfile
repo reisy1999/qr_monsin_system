@@ -5,14 +5,18 @@ WORKDIR /app
 
 # Install frontend dependencies and build
 COPY package*.json tsconfig*.json ./
+COPY ../shared ./shared
 RUN npm install
 # Copy sources for type checking
 COPY src ./src
 RUN node -v && npm -v
-# Confirm tsconfig.json exists and is readable
+RUN ls -al
+RUN ls -al shared || echo "\u26A0\uFE0F /app/shared not found"
 RUN test -f tsconfig.json && cat tsconfig.json || (echo "\u274C tsconfig.json not found in input-app"; exit 1)
 
 # Print the resolved TypeScript configuration
+RUN npx tsc --showConfig || echo "\u26A0\uFE0F tsc config issue"
+RUN npx tsc --listFiles --noEmit || echo "\u26A0\uFE0F No files to compile"
 RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconfig.json"; exit 1)
 
 # List the files included in compilation
