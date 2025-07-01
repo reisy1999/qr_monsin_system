@@ -1,157 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import QRCode from 'qrcode';
+import React, { useState, useEffect } from 'react';
 import { departmentMap } from './templates';
-import type { Template, Question } from './templates';
-import { encrypt } from './shared/crypto';
+import type { Template } from './templates';
+import { FormRenderer } from './components/FormRenderer';
+import { buildCsv } from './utils/csvBuilder';
+import { fetchPublicKey } from './utils/fetchKey';
 
 const App: React.FC = () => {
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [departmentId, setDepartmentId] = useState('');
-  const [formData, setFormData] = useState<Record<string, string | string[]>>({});
-  const [qrData, setQrData] = useState('');
   const [template, setTemplate] = useState<Template | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY;
-
-  const isFieldVisible = React.useCallback(
-    (field: Question, data: Record<string, string | string[]>) => {
-      if (field.conditional_on && field.conditional_value) {
-        const val = data[field.conditional_on];
-        if (Array.isArray(val)) {
-          return val.some((v: string | number) =>
-            field.conditional_value?.map(String).includes(String(v))
-          );
-        }
-        return field.conditional_value.map(String).includes(String(val));
-      }
-      return true;
-    },
-    []
-  );
-
-  const validateField = React.useCallback(
-    (
-      field: Question,
-      value: string | string[],
-      data: Record<string, string | string[]>
-    ): string | null => {
-      if (!isFieldVisible(field, data)) return null;
-
-    if (field.required) {
-      if (field.type === 'multi_select') {
-        if (!Array.isArray(value) || value.length === 0) {
-          return `${field.label} is required.`;
-        }
-      } else if (value === '' || value === undefined) {
-        return `${field.label} is required.`;
-      }
-    }
-
-    if (field.type === 'text') {
-      if (field.maxLength !== undefined && typeof value === 'string' && value.length > field.maxLength) {
-        return `${field.label} must be at most ${field.maxLength} characters.`;
-      }
-      if (field.validationRegex) {
-        const re = new RegExp(field.validationRegex);
-        if (typeof value === 'string' && value && !re.test(value)) {
-          return `${field.label} is invalid.`;
-        }
-      }
-    }
-
-    if (field.type === 'number') {
-      if (value !== '') {
-        const num = Number(value);
-        if (Number.isNaN(num)) {
-          return `${field.label} must be a number.`;
-        }
-        if (field.min !== undefined && num < field.min) {
-          return `${field.label} must be >= ${field.min}.`;
-        }
-        if (field.max !== undefined && num > field.max) {
-          return `${field.label} must be <= ${field.max}.`;
-        }
-      }
-    }
-
-    if (field.type === 'select') {
-      const options = field.options?.map((o) => String(o.id)) || [];
-      if (value && !options.includes(String(value))) {
-        return `${field.label} has invalid selection.`;
-      }
-    }
-
-    if (field.type === 'multi_select') {
-      const options = field.options?.map((o) => String(o.id)) || [];
-      if (Array.isArray(value)) {
-        const invalid = value.find((v: string | number) => !options.includes(String(v)));
-        if (invalid) return `${field.label} has invalid selection.`;
-      }
-    }
-
-    return null;
-  },
-    [isFieldVisible]
-  );
-
-  const validateForm = React.useCallback(
-    (tmpl: Template, data: Record<string, string | string[]>) => {
-      const errs: Record<string, string> = {};
-        tmpl.questions.forEach((q: Question) => {
-        const err = validateField(q, data[q.id], data);
-        if (err) errs[q.id] = err;
-      });
-      return errs;
-    },
-    [validateField]
-  );
+  const [formData, setFormData] = useState<Record<string, string | string[]>>({});
+  const [csv, setCsv] = useState('');
 
   useEffect(() => {
-    if (!departmentId || !template) {
-      setQrData('');
-      setErrors({});
-      return;
-    }
-
-    const errs = validateForm(template, formData);
-    setErrors(errs);
-    if (Object.keys(errs).length > 0) {
-      setQrData('');
-      return;
-    }
-
-    const csvData = [
-      departmentId,
-      ...template.questions.map((q: Question) => {
-        const val = formData[q.id];
-        if (q.type === 'multi_select') {
-          if (q.bitflag) {
-            const arr = Array.isArray(val) ? val : [];
-              return arr.reduce(
-                (acc, v: string) => acc | (1 << (parseInt(v as string, 10) - 1)),
-                0
-              );
-          }
-          return Array.isArray(val) ? val.join(';') : '';
-        }
-        return val ?? '';
-      }),
-    ].join(',');
-
-    const encrypted = encrypt(csvData);
-
-    setQrData(encrypted);
-  }, [formData, departmentId, template, encryptionKey, validateForm]);
-
-  useEffect(() => {
-    if (qrCanvasRef.current && qrData) {
-      QRCode.toCanvas(qrCanvasRef.current, qrData, { errorCorrectionLevel: 'M', width: 256 }, function (error: unknown) {
-        if (error) console.error(error);
-      });
-    }
-  }, [qrData]);
+    fetchPublicKey()
+      .then((key) => setPublicKey(key))
+      .catch(() =>
+        setError('通信に失敗しました。オフライン環境での利用はできません。')
+      );
+  }, []);
 
   useEffect(() => {
     if (!departmentId) {
@@ -159,131 +27,43 @@ const App: React.FC = () => {
       setFormData({});
       return;
     }
-    setLoading(true);
     fetch(`/templates/${departmentId}.json`)
       .then((res) => res.json())
       .then((data: Template) => {
         setTemplate(data);
-        const initial: Record<string, string | string[]> = {};
-          data.questions.forEach((q: Question) => {
-          if (q.type === 'multi_select') {
-            initial[q.id] = Array.isArray(q.defaultValue)
-              ? (q.defaultValue as string[])
-              : [];
-          } else {
-            initial[q.id] = (q.defaultValue as string) ?? '';
-          }
+        const init: Record<string, string | string[]> = {};
+        data.questions.forEach((q) => {
+          init[q.id] = q.type === 'checkbox' ? [] : '';
         });
-        setFormData(initial);
+        setFormData(init);
       })
-      .catch((err) => {
-        console.error(err);
-        setTemplate(null);
-        setFormData({});
-      })
-      .finally(() => setLoading(false));
+      .catch(() =>
+        setError('通信に失敗しました。オフライン環境での利用はできません。')
+      );
   }, [departmentId]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const handleChange = (id: string, value: string | string[]) => {
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, checked } = e.target;
-    const current = formData[name] as string[];
-    if (checked) {
-      setFormData({ ...formData, [name]: [...current, value] });
-    } else {
-      setFormData({ ...formData, [name]: current.filter((v: string) => v !== value) });
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!template) return;
+    const csvStr = buildCsv(departmentId, template, formData);
+    setCsv(csvStr);
   };
 
-  const renderField = (field: Question) => {
-    if (!isFieldVisible(field, formData)) return null;
-    const errorMsg = errors[field.id];
-    switch (field.type) {
-      case 'text':
-      case 'number':
-        return (
-          <div className="mb-3" key={field.id}>
-            <label className="form-label">{field.label}</label>
-            <input
-              type={field.type === 'number' ? 'number' : field.type}
-              className="form-control"
-              name={field.id}
-              value={formData[field.id] || ''}
-              onChange={handleInputChange}
-              placeholder={field.placeholder}
-              maxLength={field.maxLength}
-              min={field.min}
-              max={field.max}
-            />
-            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
-          </div>
-        );
-      case 'select':
-        return (
-          <div className="mb-3" key={field.id}>
-            <label className="form-label">{field.label}</label>
-            <select
-              className="form-select"
-              name={field.id}
-              value={formData[field.id] || ''}
-              onChange={handleInputChange}
-            >
-              {field.options?.map((opt: any) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
-          </div>
-        );
-      case 'multi_select':
-        return (
-          <div className="mb-3" key={field.id}>
-            <label className="form-label">{field.label}</label>
-            <div>
-              {field.options?.map((opt: any) => (
-                <div className="form-check form-check-inline" key={opt.id}>
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    name={field.id}
-                    value={String(opt.id)}
-                    onChange={handleCheckboxChange}
-                    checked={(formData[field.id] || []).includes(String(opt.id))}
-                  />
-                  <label className="form-check-label">{opt.label}</label>
-                </div>
-              ))}
-            </div>
-            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
-          </div>
-        );
-      case 'date':
-        return (
-          <div className="mb-3" key={field.id}>
-            <label className="form-label">{field.label}</label>
-            <input
-              type="date"
-              className="form-control"
-              name={field.id}
-              value={formData[field.id] || ''}
-              onChange={handleInputChange}
-              placeholder={field.placeholder}
-            />
-            {errorMsg && <div className="text-danger mt-1">{errorMsg}</div>}
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  if (error) {
+    return (
+      <div className="container mt-5">
+        <p className="text-danger">{error}</p>
+      </div>
+    );
+  }
+
+  if (!publicKey) {
+    return <div className="container mt-5">Loading...</div>;
+  }
 
   if (!departmentId) {
     return (
@@ -294,7 +74,8 @@ const App: React.FC = () => {
             className="form-select"
             value={departmentId}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setDepartmentId(e.target.value)}
+              setDepartmentId(e.target.value)
+            }
           >
             <option value="">選択してください</option>
             {Object.entries(departmentMap).map(([id, name]) => (
@@ -311,23 +92,20 @@ const App: React.FC = () => {
   return (
     <div className="container mt-5">
       <h1>QR問診票入力 - {departmentMap[departmentId]}</h1>
-      {loading && <p>Loading...</p>}
-      {template && !loading && (
-        <form>
-            {template.questions.map((field: Question) => renderField(field))}
+      {template && (
+        <form onSubmit={handleSubmit}>
+          <FormRenderer template={template} data={formData} onChange={handleChange} />
+          <button type="submit" className="btn btn-primary mt-3">
+            CSV生成
+          </button>
         </form>
       )}
-      <div className="mt-5">
-        <h2>生成されたQRコード</h2>
-        {qrData && <canvas ref={qrCanvasRef}></canvas>}
-        {qrData && (
-          <div className="mt-3">
-            <h3>QRコードデータ (テスト用)</h3>
-            <textarea className="form-control" rows={5} readOnly value={qrData} style={{ fontSize: '0.8em' }}></textarea>
-            <small className="text-danger">※この表示はテスト用です。本番環境デプロイ前に必ず削除してください。</small>
-          </div>
-        )}
-      </div>
+      {csv && (
+        <div className="mt-4">
+          <h2>CSV</h2>
+          <textarea className="form-control" rows={5} readOnly value={csv}></textarea>
+        </div>
+      )}
     </div>
   );
 };
