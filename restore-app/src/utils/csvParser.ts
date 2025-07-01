@@ -53,18 +53,25 @@ export function mapValuesToLabels(
     if (q.type === 'multi_select') {
       if (q.bitflag) {
         const mask = Number(raw);
-        const opts =
-          q.options?.filter(opt => (mask & Number(opt.id)) !== 0).map(o => o.label) ?? [];
+        const opts = Array.isArray(q.options)
+          ? q.options
+              .filter(opt => (mask & Number(opt.id)) !== 0)
+              .map(o => o.label)
+          : [];
         display = opts.join(';');
         store = opts;
       } else {
         const ids = raw.split(';').filter(Boolean);
-        const opts = ids.map(id => q.options?.find(o => String(o.id) === id)?.label ?? id);
+        const opts = Array.isArray(q.options)
+          ? ids.map(id => q.options?.find(o => String(o.id) === id)?.label ?? id)
+          : ids;
         display = opts.join(';');
         store = opts;
       }
     } else if (q.type === 'select') {
-      const opt = q.options?.find(o => String(o.id) === raw);
+      const opt = Array.isArray(q.options)
+        ? q.options.find(o => String(o.id) === raw)
+        : undefined;
       if (opt) display = opt.label;
       store = display;
     }
