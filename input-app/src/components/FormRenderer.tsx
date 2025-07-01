@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Template, Question } from '../../../shared/templates';
+import { isVisible } from '../utils/isVisible';
 
 interface Props {
   template: Template;
@@ -8,14 +9,6 @@ interface Props {
 }
 
 export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
-  const isVisible = (q: Question) => {
-    if (!q.conditional_on || !q.conditional_value) return true;
-    const target = data[q.conditional_on];
-    if (Array.isArray(target)) {
-      return target.some((v) => q.conditional_value!.includes(v));
-    }
-    return q.conditional_value.includes(target as string | number);
-  };
 
   const hasError = (q: Question) => {
     const val = data[q.id];
@@ -210,7 +203,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
   return (
     <div>
       {template.questions.map((q) =>
-        isVisible(q) ? (
+        isVisible(q, data) ? (
           <div className="mb-3" key={q.id}>
             <label className="form-label">{q.label}</label>
             {renderField(q)}

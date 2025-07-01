@@ -7,6 +7,7 @@ import { fetchPublicKey } from './utils/fetchKey';
 import { encodeAndEncrypt } from './logic/encodeAndEncrypt';
 import { generateQrFromEncrypted } from './logic/qrGenerator';
 import { postQrGeneratedLog } from './api/logApi';
+import { isVisible } from './utils/isVisible';
 import ErrorBanner from './components/ErrorBanner';
 
 const App: React.FC = () => {
@@ -18,6 +19,20 @@ const App: React.FC = () => {
   const [step, setStep] = useState(0);
   const [qrGenerated, setQrGenerated] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const visibleQuestions = template
+    ? template.questions.filter((q) => isVisible(q, formData))
+    : [];
+
+  useEffect(() => {
+    if (!template) return;
+    const currentVisible = template.questions.filter((q) =>
+      isVisible(q, formData)
+    );
+    if (step >= currentVisible.length) {
+      setStep(Math.max(0, currentVisible.length - 1));
+    }
+  }, [formData, template, step]);
 
   useEffect(() => {
     fetchPublicKey()
@@ -132,11 +147,13 @@ const App: React.FC = () => {
             >
               戻る
             </button>
-            {step < template.questions.length - 1 ? (
+            {step < visibleQuestions.length - 1 ? (
               <button
                 type="button"
                 className="btn btn-primary btn-lg"
-                onClick={() => setStep((s) => Math.min(template.questions.length - 1, s + 1))}
+                onClick={() =>
+                  setStep((s) => Math.min(visibleQuestions.length - 1, s + 1))
+                }
               >
                 次へ
               </button>

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Template, Question } from '../../../shared/templates';
+import { isVisible } from '../utils/isVisible';
 
 interface Props {
   template: Template;
@@ -9,7 +10,9 @@ interface Props {
 }
 
 const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
-  const field: Question = template.questions[step];
+  const visibleQuestions = template.questions.filter((q) => isVisible(q, data));
+  const field: Question | undefined = visibleQuestions[step];
+  if (!field) return null;
 
   const hasError = (q: Question) => {
     const val = data[q.id];
