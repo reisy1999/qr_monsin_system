@@ -56,6 +56,26 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
     }
   };
 
+  const handleMultiSelectChange = (
+    field: Question,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { value, checked } = e.target;
+    if (field.bitflag) {
+      const bit = 1 << (Number(value) - 1);
+      const current = Number(data[field.id] || 0);
+      const updated = checked ? current | bit : current & ~bit;
+      onChange(field.id, String(updated));
+    } else {
+      const current = Array.isArray(data[field.id]) ? (data[field.id] as string[]) : [];
+      if (checked) {
+        onChange(field.id, [...current, value]);
+      } else {
+        onChange(field.id, current.filter((v) => v !== value));
+      }
+    }
+  };
+
   const renderField = (field: Question) => {
     switch (field.type) {
       case 'text':
@@ -152,18 +172,26 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
         return (
           <div>
             {field.options?.map((opt) => {
-              const checked = Array.isArray(data[field.id])
-                ? (data[field.id] as string[]).includes(String(opt.id))
-                : false;
+              const optVal = String(opt.id);
+              let checked = false;
+              if (field.bitflag) {
+                const mask = Number(data[field.id] || 0);
+                const bit = 1 << (Number(optVal) - 1);
+                checked = (mask & bit) !== 0;
+              } else {
+                checked = Array.isArray(data[field.id])
+                  ? (data[field.id] as string[]).includes(optVal)
+                  : false;
+              }
               return (
                 <div className="form-check form-check-inline" key={opt.id}>
                   <input
                     className="form-check-input"
                     type="checkbox"
                     name={field.id}
-                    value={String(opt.id)}
+                    value={optVal}
                     checked={checked}
-                    onChange={handleChange}
+                    onChange={(e) => handleMultiSelectChange(field, e)}
                   />
                   <label className="form-check-label">{opt.label}</label>
                 </div>
