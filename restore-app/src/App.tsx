@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
 import { decryptQr } from './api';
-import { parseCsv } from './utils/csvParser';
+import { parseCsvValues, mapValuesToLabels } from './utils/csvParser';
+import type { Template } from '../../shared/templates';
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [result, setResult] = useState<{ label: string; value: string }[]>([]);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
 
   const handleSubmit = async () => {
     try {
       const csv = await decryptQr(input.trim());
-      const parsed = parseCsv(csv);
-      setResult(parsed);
+      const values = parseCsvValues(csv);
+      const departmentId = values.shift() || '';
+      const res = await fetch(`/templates/${departmentId}.json`);
+      const template: Template = await res.json();
+      const payloadBytes = atob(input.trim()).length;
+      if (
+        template.max_payload_bytes &&
+        payloadBytes > template.max_payload_bytes
+      ) {
+        setWarning('QRデータが規定サイズを超えています');
+      } else {
+        setWarning('');
+      }
+      const labeled = mapValuesToLabels(values, template, true);
+      setResult(labeled);
       setError('');
     } catch (e) {
       console.error(e);
@@ -23,6 +38,7 @@ const App: React.FC = () => {
         );
       }
       setResult([]);
+      setWarning('');
     }
   };
 
@@ -44,6 +60,9 @@ const App: React.FC = () => {
         復元
       </button>
       {error && <div className="alert alert-danger mt-3">{error}</div>}
+      {warning && !error && (
+        <div className="alert alert-warning mt-3">{warning}</div>
+      )}
       {result.length > 0 && (
         <table className="table table-bordered mt-3">
           <tbody>
