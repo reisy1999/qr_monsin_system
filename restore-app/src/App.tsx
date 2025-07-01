@@ -3,6 +3,17 @@ import { decryptQr } from './api';
 import { parseCsvValues, mapValuesToLabels } from './utils/csvParser';
 import type { Template } from '../../shared/templates';
 
+const validateTemplate = (tpl: Template) => {
+  tpl.questions.forEach(q => {
+    if (
+      (q.type === 'select' || q.type === 'multi_select') &&
+      !Array.isArray(q.options)
+    ) {
+      console.warn(`❗ テンプレートの質問 ${q.id} は options が未定義です`);
+    }
+  });
+};
+
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [result, setResult] = useState<{ label: string; value: string }[]>([]);
@@ -16,6 +27,7 @@ const App: React.FC = () => {
       const departmentId = values.shift() || '';
       const res = await fetch(`/templates/${departmentId}.json`);
       const template: Template = await res.json();
+      validateTemplate(template);
       const payloadBytes = atob(input.trim()).length;
       if (
         template.max_payload_bytes &&

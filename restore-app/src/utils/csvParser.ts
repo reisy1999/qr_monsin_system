@@ -51,27 +51,25 @@ export function mapValuesToLabels(
     let store: string | string[] = raw;
 
     if (q.type === 'multi_select') {
+      const options = Array.isArray(q.options) ? q.options : [];
       if (q.bitflag) {
         const mask = Number(raw);
-        const opts = Array.isArray(q.options)
-          ? q.options
-              .filter(opt => (mask & Number(opt.id)) !== 0)
-              .map(o => o.label)
-          : [];
+        const opts = options
+          .filter(opt => (mask & Number(opt.id)) !== 0)
+          .map(o => o.label);
         display = opts.join(';');
         store = opts;
       } else {
         const ids = raw.split(';').filter(Boolean);
-        const opts = Array.isArray(q.options)
-          ? ids.map(id => q.options?.find(o => String(o.id) === id)?.label ?? id)
-          : ids;
+        const opts = ids.map(
+          id => options.find(o => String(o.id) === id)?.label ?? id
+        );
         display = opts.join(';');
         store = opts;
       }
     } else if (q.type === 'select') {
-      const opt = Array.isArray(q.options)
-        ? q.options.find(o => String(o.id) === raw)
-        : undefined;
+      const options = Array.isArray(q.options) ? q.options : [];
+      const opt = options.find(o => String(o.id) === raw);
       if (opt) display = opt.label;
       store = display;
     }

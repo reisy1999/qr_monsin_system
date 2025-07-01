@@ -134,10 +134,11 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
           </select>
         );
       }
-      case 'multi_select':
+      case 'multi_select': {
+        const options = Array.isArray(q.options) ? q.options : [];
         return (
           <div>
-            {(Array.isArray(q.options) ? q.options : []).map((opt) => {
+            {options.map((opt) => {
               const optVal = String(opt.id);
               let checked = false;
               if (q.bitflag) {
@@ -168,6 +169,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             )}
           </div>
         );
+      }
       default:
         return null;
     }
