@@ -125,7 +125,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             onChange={handleChange}
           >
             <option value="">選択してください</option>
-            {q.options?.map((opt) => (
+            {Array.isArray(q.options) && q.options.map((opt) => (
               <option key={opt.id} value={String(opt.id)}>
                 {opt.label}
               </option>
@@ -135,7 +135,7 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
       case 'multi_select':
         return (
           <div>
-            {q.options?.map((opt) => {
+            {Array.isArray(q.options) && q.options.map((opt) => {
               const optVal = String(opt.id);
               let checked = false;
               if (q.bitflag) {

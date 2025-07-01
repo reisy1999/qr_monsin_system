@@ -116,7 +116,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
             onChange={handleChange}
           >
             <option value="">選択してください</option>
-            {field.options?.map((opt) => (
+            {Array.isArray(field.options) && field.options.map((opt) => (
               <option key={opt.id} value={String(opt.id)}>
                 {opt.label}
               </option>
@@ -126,7 +126,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
       case 'multi_select':
         return (
           <div>
-            {field.options?.map((opt) => {
+            {Array.isArray(field.options) && field.options.map((opt) => {
               const optVal = String(opt.id);
               let checked = false;
               if (field.bitflag) {
