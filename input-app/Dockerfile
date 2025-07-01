@@ -6,6 +6,8 @@ WORKDIR /app
 # Install frontend dependencies and build
 COPY package*.json tsconfig*.json ./
 RUN npm install
+# Copy sources for type checking
+COPY src ./src
 RUN node -v && npm -v && if [ -f tsconfig.json ]; then npx tsc --noEmit || echo "Type-check failed, continuing"; else echo "Skipping type-check (no tsconfig.json)"; fi
 COPY . .
 RUN npm run build
@@ -14,6 +16,8 @@ RUN npm run build
 WORKDIR /app/server
 COPY server/package*.json server/tsconfig*.json ./
 RUN npm install
+# Copy server sources for type checking
+COPY server/*.ts ./
 RUN node -v && npm -v && if [ -f tsconfig.json ]; then npx tsc --noEmit || echo "Type-check failed, continuing"; else echo "Skipping type-check (no tsconfig.json)"; fi
 COPY server .
 RUN npm run build
