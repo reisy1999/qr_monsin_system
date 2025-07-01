@@ -33,20 +33,8 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    if (type === 'checkbox') {
-      const current = (data[name] as string[]) || [];
-      if (checked) {
-        onChange(name, [...current, value]);
-      } else {
-        onChange(
-          name,
-          current.filter((v) => v !== value)
-        );
-      }
-    } else {
-      onChange(name, value);
-    }
+    const { name, value } = e.target as HTMLInputElement;
+    onChange(name, value);
   };
 
   const handleMultiSelectChange = (
@@ -55,7 +43,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
   ) => {
     const { value, checked } = e.target;
     if (field.bitflag) {
-      const bit = 1 << (Number(value) - 1);
+      const bit = Number(value);
       const current = Number(data[field.id] || 0);
       const updated = checked ? current | bit : current & ~bit;
       onChange(field.id, String(updated));
@@ -135,32 +123,6 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
             ))}
           </select>
         );
-      case 'checkbox':
-        return (
-          <div>
-            {field.options?.map((opt) => {
-              const checked = Array.isArray(data[field.id])
-                ? (data[field.id] as string[]).includes(String(opt.id))
-                : false;
-              return (
-                <div className="form-check form-check-inline" key={opt.id}>
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    name={field.id}
-                    value={String(opt.id)}
-                    checked={checked}
-                    onChange={handleChange}
-                  />
-                  <label className="form-check-label">{opt.label}</label>
-                </div>
-              );
-            })}
-            {hasError(field) && (
-              <div className="invalid-feedback d-block">入力が不正です</div>
-            )}
-          </div>
-        );
       case 'multi_select':
         return (
           <div>
@@ -169,7 +131,7 @@ export const FormRenderer: React.FC<Props> = ({ template, data, onChange }) => {
               let checked = false;
               if (field.bitflag) {
                 const mask = Number(data[field.id] || 0);
-                const bit = 1 << (Number(optVal) - 1);
+                const bit = Number(optVal);
                 checked = (mask & bit) !== 0;
               } else {
                 checked = Array.isArray(data[field.id])

@@ -1,12 +1,12 @@
 export interface Option {
-  id: string | number;
+  id: number;
   label: string;
 }
 
 export interface Question {
   id: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'multi_select' | string;
+  type: 'text' | 'textarea' | 'number' | 'date' | 'select' | 'multi_select';
   options?: Option[];
   bitflag?: boolean;
   required?: boolean;
