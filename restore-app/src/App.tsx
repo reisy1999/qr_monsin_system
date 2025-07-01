@@ -15,7 +15,13 @@ const App: React.FC = () => {
       setError('');
     } catch (e) {
       console.error(e);
-      setError('QRコードの復号に失敗しました。再度読み取りをお試しください。');
+      if (e instanceof Error && e.message) {
+        setError(e.message);
+      } else {
+        setError(
+          '復号に失敗しました。有効期間外のQRコードである可能性があります。患者様にご確認ください。'
+        );
+      }
       setResult([]);
     }
   };

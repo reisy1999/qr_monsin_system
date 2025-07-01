@@ -22,7 +22,9 @@ const App: React.FC = () => {
     fetchPublicKey()
       .then((key) => setPublicKey(key))
       .catch(() =>
-        setError('通信に失敗しました。オフライン環境ではご利用いただけません。')
+        setError(
+          'サーバーとの通信に失敗しました。通信環境の良い場所でページを再読み込みしてください。'
+        )
       );
   }, []);
 
@@ -66,7 +68,9 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
-      setError('QRコードの生成に失敗しました。通信環境をご確認ください。');
+      setError(
+        'QRコードの生成に失敗しました。お手数ですが、最初からやり直してください。'
+      );
     }
   };
 

@@ -5,12 +5,16 @@ export async function decryptQr(data: string): Promise<string> {
     body: JSON.stringify({ data })
   });
 
+  const json = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    throw new Error('decrypt failed');
+    const msg = typeof json.error === 'string' ? json.error : 'decrypt failed';
+    throw new Error(msg);
   }
-  const json = await res.json();
+
   if (!json.csv) {
     throw new Error('decrypt failed');
   }
+
   return json.csv as string;
 }
