@@ -115,7 +115,8 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             onChange={handleChange}
           />
         );
-      case 'select':
+      case 'select': {
+        const options = Array.isArray(q.options) ? q.options : [];
         return (
           <select
             className={`form-select${hasError(q) ? ' is-invalid' : ''}`}
@@ -125,17 +126,18 @@ const StepForm: React.FC<Props> = ({ template, step, data, onChange }) => {
             onChange={handleChange}
           >
             <option value="">選択してください</option>
-            {q.options?.map((opt) => (
+            {options.map((opt) => (
               <option key={opt.id} value={String(opt.id)}>
                 {opt.label}
               </option>
             ))}
           </select>
         );
+      }
       case 'multi_select':
         return (
           <div>
-            {q.options?.map((opt) => {
+            {(Array.isArray(q.options) ? q.options : []).map((opt) => {
               const optVal = String(opt.id);
               let checked = false;
               if (q.bitflag) {
