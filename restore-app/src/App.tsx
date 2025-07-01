@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { departmentMap } from './templates';
 import type { Template, Question } from './templates';
-import { decryptCsv } from '../../shared/crypto';
+import { decryptCsv } from './crypto';
 
 const App: React.FC = () => {
   const [qrData, setQrData] = useState('');
@@ -36,13 +36,13 @@ const App: React.FC = () => {
 
       const dataPart = parsed.slice(1);
       const obj: Record<string, string> = {};
-      template.questions.forEach((field, idx) => {
+      template.questions.forEach((field: Question, idx: number) => {
         let value = dataPart[idx] || '';
         if (field.type === 'multi_select') {
           if (field.bitflag) {
             const num = parseInt(value, 10);
             const selected: string[] = [];
-            field.options?.forEach((opt) => {
+            field.options?.forEach((opt: { id: string | number }) => {
               const bit = 1 << (parseInt(opt.id as string, 10) - 1);
               if (num & bit) selected.push(String(opt.id));
             });
@@ -103,7 +103,7 @@ const App: React.FC = () => {
   const handleCopyToClipboard = () => {
     if (!template) return;
     const lines = template.questions.map(
-      (f) => `${f.label}: ${formatValue(f, restoredData[f.id] || '')}`
+      (f: Question) => `${f.label}: ${formatValue(f, restoredData[f.id] || '')}`
     );
     navigator.clipboard.writeText(lines.join('\n'));
     alert('Copied to clipboard!');
@@ -112,7 +112,7 @@ const App: React.FC = () => {
   const handleDownloadTxt = () => {
     if (!template) return;
     const lines = template.questions.map(
-      (f) => `${f.label}: ${formatValue(f, restoredData[f.id] || '')}`
+      (f: Question) => `${f.label}: ${formatValue(f, restoredData[f.id] || '')}`
     );
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -128,7 +128,13 @@ const App: React.FC = () => {
       <div className="d-flex flex-column justify-content-center align-items-center vh-100">
         <div>
           <h1 className="mb-3">診療科を選択してください</h1>
-          <select className="form-select" value="" onChange={(e) => setDepartmentId(e.target.value)}>
+          <select
+            className="form-select"
+            value=""
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setDepartmentId(e.target.value)
+            }
+          >
             <option value="">選択してください</option>
             {Object.entries(departmentMap).map(([id, name]) => (
               <option key={id} value={id}>
@@ -143,11 +149,18 @@ const App: React.FC = () => {
 
   return (
     <div className="container mt-5">
-      <h1>QR問診票復元 - {departmentMap[departmentId]}</h1>
+      <h1>QR問診票復元 - {departmentMap[departmentId] ?? ''}</h1>
       {loading && <p>Loading...</p>}
       <div className="mb-3">
         <label className="form-label">QRデータ</label>
-        <textarea className="form-control" rows={5} value={qrData} onChange={(e) => setQrData(e.target.value)}></textarea>
+        <textarea
+          className="form-control"
+          rows={5}
+          value={qrData}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            setQrData(e.target.value)
+          }
+        ></textarea>
       </div>
       <button className="btn btn-primary me-2" onClick={handleRestore}>
         復元
