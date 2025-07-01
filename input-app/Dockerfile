@@ -8,12 +8,13 @@ COPY package*.json tsconfig*.json ./
 RUN npm install
 # Copy sources for type checking
 COPY src ./src
-RUN node -v && npm -v && \
-    if [ -f tsconfig.json ]; then \
-        npx tsc --noEmit || true; \
-    else \
-        echo "\u26A0\uFE0F tsconfig.json not found. Skipping type check."; \
-    fi
+RUN node -v && npm -v
+RUN ls -al && cat tsconfig.json || echo "\u26A0\uFE0F tsconfig.json not found"
+RUN npx tsc --showConfig || echo "\u26A0\uFE0F Could not resolve tsconfig.json"
+RUN npx tsc --listFiles --noEmit || echo "\u26A0\uFE0F No files were included in the compilation"
+RUN test -f tsconfig.json \
+  && npx tsc --project tsconfig.json --noEmit \
+  || { echo "\u274C tsconfig.json not found or TypeScript failed"; exit 1; }
 COPY . .
 RUN npm run build
 
@@ -23,12 +24,13 @@ COPY server/package*.json server/tsconfig*.json ./
 RUN npm install
 # Copy server sources for type checking
 COPY server/*.ts ./
-RUN node -v && npm -v && \
-    if [ -f tsconfig.json ]; then \
-        npx tsc --noEmit || true; \
-    else \
-        echo "\u26A0\uFE0F tsconfig.json not found. Skipping type check."; \
-    fi
+RUN node -v && npm -v
+RUN ls -al && cat tsconfig.json || echo "\u26A0\uFE0F tsconfig.json not found"
+RUN npx tsc --showConfig || echo "\u26A0\uFE0F Could not resolve tsconfig.json"
+RUN npx tsc --listFiles --noEmit || echo "\u26A0\uFE0F No files were included in the compilation"
+RUN test -f tsconfig.json \
+  && npx tsc --project tsconfig.json --noEmit \
+  || { echo "\u274C tsconfig.json not found or TypeScript failed"; exit 1; }
 COPY server .
 RUN npm run build
 
