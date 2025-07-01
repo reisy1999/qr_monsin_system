@@ -3,17 +3,19 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Install frontend dependencies and build
+# Install frontend dependencies
 COPY package*.json ./
 RUN npm install
+
+# Copy application source
 COPY . .
+
+# Build the React frontend
 RUN npm run build
 
 # Build the Express server
 WORKDIR /app/server
-COPY server/package*.json ./
 RUN npm install
-COPY server .
 RUN npm run build
 
 # Stage 2: Run with Node
