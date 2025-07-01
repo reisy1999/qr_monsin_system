@@ -4,12 +4,20 @@ WORKDIR /app
 
 COPY package*.json ./
 RUN npm install
-RUN node -v && npm -v && \
-    if [ -f tsconfig.json ]; then \
-        npx tsc --noEmit || true; \
-    else \
-        echo "\u26A0\uFE0F tsconfig.json not found. Skipping type check."; \
-    fi
+# Verify Node and npm versions
+RUN node -v && npm -v
+
+# Confirm tsconfig.json exists and is readable
+RUN test -f tsconfig.json && cat tsconfig.json || (echo "\u274C tsconfig.json not found in restore-server"; exit 1)
+
+# Print the resolved TypeScript configuration
+RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconfig.json"; exit 1)
+
+# List the files included in compilation
+RUN npx tsc --project tsconfig.json --listFiles --noEmit || (echo "\u26A0\uFE0F No files found for compilation"; exit 1)
+
+# Run TypeScript check without emitting files
+RUN npx tsc --project tsconfig.json --noEmit || (echo "\u274C TypeScript check failed"; exit 1)
 COPY . .
 RUN npm run build
 

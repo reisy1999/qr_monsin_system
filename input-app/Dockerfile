@@ -9,12 +9,17 @@ RUN npm install
 # Copy sources for type checking
 COPY src ./src
 RUN node -v && npm -v
-RUN ls -al && cat tsconfig.json || echo "\u26A0\uFE0F tsconfig.json not found"
-RUN npx tsc --showConfig || echo "\u26A0\uFE0F Could not resolve tsconfig.json"
-RUN npx tsc --listFiles --noEmit || echo "\u26A0\uFE0F No files were included in the compilation"
-RUN test -f tsconfig.json \
-  && npx tsc --project tsconfig.json --noEmit \
-  || { echo "\u274C tsconfig.json not found or TypeScript failed"; exit 1; }
+# Confirm tsconfig.json exists and is readable
+RUN test -f tsconfig.json && cat tsconfig.json || (echo "\u274C tsconfig.json not found in input-app"; exit 1)
+
+# Print the resolved TypeScript configuration
+RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconfig.json"; exit 1)
+
+# List the files included in compilation
+RUN npx tsc --project tsconfig.json --listFiles --noEmit || (echo "\u26A0\uFE0F No files found for compilation"; exit 1)
+
+# Run TypeScript check without emitting files
+RUN npx tsc --project tsconfig.json --noEmit || (echo "\u274C TypeScript check failed"; exit 1)
 COPY . .
 RUN npm run build
 
@@ -25,12 +30,17 @@ RUN npm install
 # Copy server sources for type checking
 COPY server/*.ts ./
 RUN node -v && npm -v
-RUN ls -al && cat tsconfig.json || echo "\u26A0\uFE0F tsconfig.json not found"
-RUN npx tsc --showConfig || echo "\u26A0\uFE0F Could not resolve tsconfig.json"
-RUN npx tsc --listFiles --noEmit || echo "\u26A0\uFE0F No files were included in the compilation"
-RUN test -f tsconfig.json \
-  && npx tsc --project tsconfig.json --noEmit \
-  || { echo "\u274C tsconfig.json not found or TypeScript failed"; exit 1; }
+# Confirm tsconfig.json exists and is readable
+RUN test -f tsconfig.json && cat tsconfig.json || (echo "\u274C tsconfig.json not found in input-app server"; exit 1)
+
+# Print the resolved TypeScript configuration
+RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconfig.json"; exit 1)
+
+# List the files included in compilation
+RUN npx tsc --project tsconfig.json --listFiles --noEmit || (echo "\u26A0\uFE0F No files found for compilation"; exit 1)
+
+# Run TypeScript check without emitting files
+RUN npx tsc --project tsconfig.json --noEmit || (echo "\u274C TypeScript check failed"; exit 1)
 COPY server .
 RUN npm run build
 
