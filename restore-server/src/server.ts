@@ -1,11 +1,12 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { createPrivateKey, privateDecrypt, constants } from 'crypto';
+import { createPrivateKey } from 'crypto';
 import zlib from 'zlib';
 import iconv from 'iconv-lite';
 import dotenv from 'dotenv';
 import pino from 'pino';
+import { decryptWithKeys } from './decrypt';
 
 dotenv.config();
 
@@ -23,6 +24,17 @@ const logger = pino(
     { stream: pino.destination(path.join(logDir, 'decrypt.log')) }
   ])
 );
+
+const keyPaths = (process.env.PRIVATE_KEY_PATHS || 'keys/current.pem')
+  .split(',')
+  .map(p => p.trim())
+  .filter(p => p.length > 0);
+
+const privateKeys = keyPaths.map(p => {
+  const resolved = path.isAbsolute(p) ? p : path.join(__dirname, '..', p);
+  const key = fs.readFileSync(resolved, 'utf8');
+  return createPrivateKey(key);
+});
 
 app.use((req, _res, next) => {
   logger.info({
@@ -42,17 +54,7 @@ app.post('/api/decrypt', (req, res) => {
 
   try {
     const encrypted = Buffer.from(data, 'base64');
-    const keyPath = path.join(__dirname, '../keys/current.pem');
-    const key = fs.readFileSync(keyPath, 'utf8');
-    const privateKey = createPrivateKey(key);
-    const decrypted = privateDecrypt(
-      {
-        key: privateKey,
-        padding: constants.RSA_PKCS1_OAEP_PADDING,
-        oaepHash: 'sha256'
-      },
-      encrypted
-    );
+    const decrypted = decryptWithKeys(encrypted, privateKeys);
     const inflated = zlib.inflateSync(decrypted);
     const csv = iconv.decode(inflated, 'Shift_JIS');
     logger.info('decryption succeeded');
