@@ -23,6 +23,7 @@ RUN npx tsc --project tsconfig.json --showConfig || (echo "\u274C Invalid tsconf
 RUN npx tsc --project tsconfig.json --listFiles --noEmit || (echo "\u26A0\uFE0F No files found for compilation"; exit 1)
 
 # Run TypeScript check without emitting files
+COPY ../shared ./shared
 RUN npx tsc --project tsconfig.json --noEmit || (echo "\u274C TypeScript check failed"; exit 1)
 COPY . .
 RUN npm run build
