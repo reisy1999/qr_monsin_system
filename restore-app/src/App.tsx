@@ -4,12 +4,15 @@ import { parseCsvValues, mapValuesToLabels } from './utils/csvParser';
 import type { Template } from '../../shared/templates';
 
 const validateTemplate = (tpl: Template) => {
+  if (!tpl || !Array.isArray(tpl.questions)) {
+    throw new Error('Invalid template: questions array is missing or not an array.');
+  }
   tpl.questions.forEach(q => {
     if (
       (q.type === 'select' || q.type === 'multi_select') &&
       !Array.isArray(q.options)
     ) {
-      console.warn(`❗ テンプレートの質問 ${q.id} は options が未定義です`);
+      throw new Error(`Invalid template: question ${q.id} has undefined options for select/multi_select type.`);
     }
   });
 };

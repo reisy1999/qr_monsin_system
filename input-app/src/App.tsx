@@ -11,12 +11,15 @@ import { isVisible } from './utils/isVisible';
 import ErrorBanner from './components/ErrorBanner';
 
 const validateTemplate = (tpl: Template) => {
+  if (!tpl || !Array.isArray(tpl.questions)) {
+    throw new Error('Invalid template: questions array is missing or not an array.');
+  }
   tpl.questions.forEach((q) => {
     if (
       (q.type === 'select' || q.type === 'multi_select') &&
       !Array.isArray(q.options)
     ) {
-      console.warn(`❗ テンプレートの質問 ${q.id} は options が未定義です`);
+      throw new Error(`Invalid template: question ${q.id} has undefined options for select/multi_select type.`);
     }
   });
 };
@@ -31,15 +34,13 @@ const App: React.FC = () => {
   const [qrGenerated, setQrGenerated] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const visibleQuestions = template
-    ? template.questions.filter((q) => isVisible(q, formData))
-    : [];
+  const visibleQuestions = template?.questions?.filter((q) => isVisible(q, formData)) || [];
 
   useEffect(() => {
     if (!template) return;
-    const currentVisible = template.questions.filter((q) =>
+    const currentVisible = template?.questions?.filter((q) =>
       isVisible(q, formData)
-    );
+    ) || [];
     if (step >= currentVisible.length) {
       setStep(Math.max(0, currentVisible.length - 1));
     }
