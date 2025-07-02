@@ -105,11 +105,9 @@ const App: React.FC = () => {
     const csvStr = buildCsv(departmentId, template, formData);
     try {
       const encrypted = await encodeAndEncrypt(csvStr, publicKey);
-      if (canvasRef.current) {
-        await generateQrFromEncrypted(encrypted, canvasRef.current);
-        await postQrGeneratedLog(template.version);
-        setQrGenerated(true);
-      }
+      await generateQrFromEncrypted(encrypted, canvasRef.current!);
+      await postQrGeneratedLog(template.version);
+      setQrGenerated(true);
     } catch (err) {
       console.error(err);
       setError(
@@ -203,7 +201,10 @@ const App: React.FC = () => {
           </div>
         </form>
       )}
-      {qrGenerated && <canvas ref={canvasRef} className="mt-4" />}
+      <canvas
+        ref={canvasRef}
+        className={`mt-4 ${qrGenerated ? '' : 'd-none'}`}
+      />
     </div>
   );
 };
