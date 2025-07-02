@@ -10,6 +10,7 @@ COPY restore-server/tsconfig.json ./
 COPY restore-server/src ./src
 
 COPY restore-server/keys ./keys
+COPY input-app/public/templates ./templates
 
 # Verify Node and npm versions
 RUN node -v && npm -v
@@ -36,6 +37,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/package-lock.json ./package-lock.json
 COPY --from=build /app/keys ./keys
+COPY --from=build /app/templates ./templates
 RUN npm install --omit=dev
 
 ENV PORT=3000

@@ -19,6 +19,9 @@ COPY input-app .
 
 RUN npm run build
 
+# Copy form templates for the Express server
+RUN mkdir -p server/templates && cp public/templates/*.json server/templates/
+
 # Build the Express server
 WORKDIR /app/server
 COPY input-app/server/package*.json input-app/server/tsconfig*.json ./

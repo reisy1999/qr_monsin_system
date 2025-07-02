@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import { promises as fsp } from 'fs';
 import { createPrivateKey } from 'crypto';
 import zlib from 'zlib';
 import iconv from 'iconv-lite';
@@ -68,6 +69,22 @@ app.post('/api/decrypt', (req, res) => {
         '復号に失敗しました。有効期間外のQRコードである可能性があります。患者様にご確認ください。';
     }
     res.status(400).json({ error: message });
+  }
+});
+
+app.get('/templates/:id.json', async (req, res) => {
+  const filePath = path.join(__dirname, '../templates', `${req.params.id}.json`);
+  try {
+    const content = await fsp.readFile(filePath, 'utf-8');
+    res.type('application/json').send(content);
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException;
+    if (e.code === 'ENOENT') {
+      res.status(404).json({ error: 'Template not found' });
+    } else {
+      logger.error(e);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
 });
 
