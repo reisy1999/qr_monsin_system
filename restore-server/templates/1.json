@@ -1,0 +1,263 @@
+{
+  "department_id": 1,
+  "department_name": "内科",
+  "version": "1.0",
+  "max_payload_bytes": 1600,
+  "questions": [
+    {
+      "id": "q1",
+      "label": "受診予定日",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "q2",
+      "label": "名前",
+      "type": "text",
+      "required": true,
+      "maxLength": 30
+    },
+    {
+      "id": "q3",
+      "label": "生年月日",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "q4",
+      "label": "年齢",
+      "type": "number",
+      "required": true
+    },
+    {
+      "id": "q5",
+      "label": "身長(cm)",
+      "type": "number"
+    },
+    {
+      "id": "q6",
+      "label": "体重(kg)",
+      "type": "number"
+    },
+    {
+      "id": "q7",
+      "label": "体温(℃)",
+      "type": "number"
+    },
+    {
+      "id": "q8",
+      "label": "マイナ保険証による診療情報取得に同意しましたか？",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "はい" },
+        { "id": 2, "label": "いいえ" }
+      ],
+      "required": true
+    },
+    {
+      "id": "q9",
+      "label": "この一年間で健診を受診されましたか？",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "受けていない" },
+        { "id": 2, "label": "特定健診" },
+        { "id": 3, "label": "高齢者健診" },
+        { "id": 4, "label": "その他" }
+      ]
+    },
+    {
+      "id": "q10",
+      "label": "他院からの紹介状をお持ちですか？",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "なし" },
+        { "id": 2, "label": "あり(画像データあり)" },
+        { "id": 3, "label": "あり(画像データなし)" }
+      ]
+    },
+    {
+      "id": "q11",
+      "label": "本日はどうなさいましたか？",
+      "type": "multi_select",
+      "bitflag": true,
+      "options": [
+        { "id": 1, "label": "発熱" },
+        { "id": 2, "label": "頭痛" },
+        { "id": 4, "label": "のどの痛み" },
+        { "id": 8, "label": "咳" },
+        { "id": 16, "label": "痰" },
+        { "id": 32, "label": "鼻水" },
+        { "id": 64, "label": "だるさ・倦怠感" },
+        { "id": 128, "label": "胸痛" },
+        { "id": 256, "label": "息切れ" },
+        { "id": 512, "label": "動悸" },
+        { "id": 1024, "label": "むくみ" },
+        { "id": 2048, "label": "発疹" },
+        { "id": 4096, "label": "胃痛" },
+        { "id": 8192, "label": "腹痛(上部)" },
+        { "id": 16384, "label": "腹痛(下部)" },
+        { "id": 32768, "label": "腹痛(全体的に)" },
+        { "id": 65536, "label": "吐き気" },
+        { "id": 131072, "label": "便秘" },
+        { "id": 262144, "label": "下痢" },
+        { "id": 524288, "label": "下血" },
+        { "id": 1048576, "label": "食欲不振" },
+        { "id": 2097152, "label": "健診の再検査" },
+        { "id": 4194304, "label": "その他" }
+      ]
+    },
+    {
+      "id": "q12",
+      "label": "健診の再検査の場合、指摘された箇所",
+      "type": "text",
+      "maxLength": 10,
+      "conditional_on": "q11",
+      "conditional_value": [2097152]
+    },
+    {
+      "id": "q13",
+      "label": "上記症状はいつからですか？",
+      "type": "text",
+      "maxLength": 20
+    },
+    {
+      "id": "q14",
+      "label": "現在通院中、または過去にかかったことのある病気はありますか？",
+      "type": "multi_select",
+      "bitflag": true,
+      "options": [
+        { "id": 1, "label": "なし" },
+        { "id": 2, "label": "高血圧" },
+        { "id": 4, "label": "喘息" },
+        { "id": 8, "label": "心疾患" },
+        { "id": 16, "label": "糖尿病" },
+        { "id": 32, "label": "高脂血症" },
+        { "id": 64, "label": "脳血管疾患" },
+        { "id": 128, "label": "癌" },
+        { "id": 256, "label": "その他" }
+      ]
+    },
+    {
+      "id": "q15",
+      "label": "コロナワクチンの接種歴",
+      "type": "text",
+      "maxLength": 40
+    },
+    {
+      "id": "q16",
+      "label": "ほかの医療機関へ通院されていますか？",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "いいえ" },
+        { "id": 2, "label": "病院" },
+        { "id": 3, "label": "クリニック" },
+        { "id": 4, "label": "その他" }
+      ]
+    },
+    {
+      "id": "q16_detail",
+      "label": "医療機関名等",
+      "type": "text",
+      "maxLength": 10,
+      "conditional_on": "q16",
+      "conditional_value": [2, 3, 4]
+    },
+    {
+      "id": "q17",
+      "label": "現在内服中のお薬はありますか？",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "なし" },
+        { "id": 2, "label": "あり(当院処方箋)" },
+        { "id": 3, "label": "あり(他院処方箋)" },
+        { "id": 4, "label": "あり(お薬手帳なし)" }
+      ]
+    },
+    {
+      "id": "q18",
+      "label": "アレルギーはありますか？",
+      "type": "multi_select",
+      "bitflag": true,
+      "options": [
+        { "id": 1, "label": "なし" },
+        { "id": 2, "label": "花粉症" },
+        { "id": 4, "label": "造影剤" },
+        { "id": 8, "label": "アルコール" },
+        { "id": 16, "label": "食べ物" },
+        { "id": 32, "label": "薬" }
+      ]
+    },
+    {
+      "id": "q19_smoke",
+      "label": "たばこ",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "吸わない" },
+        { "id": 2, "label": "過去に吸っていた" },
+        { "id": 3, "label": "吸う" }
+      ]
+    },
+    {
+      "id": "q19_smoke_detail",
+      "label": "たばこ：本数や頻度",
+      "type": "text",
+      "maxLength": 20,
+      "conditional_on": "q19_smoke",
+      "conditional_value": [3]
+    },
+    {
+      "id": "q19_alcohol",
+      "label": "アルコール",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "飲まない" },
+        { "id": 2, "label": "飲む" }
+      ]
+    },
+    {
+      "id": "q19_alcohol_detail",
+      "label": "アルコール：種類・頻度・量",
+      "type": "text",
+      "maxLength": 20,
+      "conditional_on": "q19_alcohol",
+      "conditional_value": [2]
+    },
+    {
+      "id": "q19_supplement",
+      "label": "サプリメント",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "なし" },
+        { "id": 2, "label": "あり" }
+      ]
+    },
+    {
+      "id": "q19_supplement_detail",
+      "label": "サプリメント内容",
+      "type": "text",
+      "maxLength": 20,
+      "conditional_on": "q19_supplement",
+      "conditional_value": [2]
+    },
+    {
+      "id": "q20",
+      "label": "現在妊娠していますか？",
+      "type": "select",
+      "options": [
+        { "id": 1, "label": "妊娠していない" },
+        { "id": 2, "label": "わからない" },
+        { "id": 3, "label": "妊娠している" },
+        { "id": 4, "label": "授乳中" }
+      ]
+    },
+    {
+      "id": "q20_week",
+      "label": "妊娠週数",
+      "type": "number",
+      "min": 1,
+      "max": 50,
+      "conditional_on": "q20",
+      "conditional_value": [3]
+    }
+  ]
+}
