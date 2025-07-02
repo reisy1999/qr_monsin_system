@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { decryptQr } from './api';
 import { parseCsvValues, mapValuesToLabels } from './utils/csvParser';
-import type { Template } from '../../shared/templates';
+import type { Question, Template } from '../shared/templates';
 
 const validateTemplate = (tpl: Template) => {
   if (!tpl || !Array.isArray(tpl.questions)) {
     throw new Error('Invalid template: questions array is missing or not an array.');
   }
-  tpl.questions.forEach(q => {
+  tpl.questions.forEach((q: Question) => {
     if (
       (q.type === 'select' || q.type === 'multi_select') &&
       !Array.isArray(q.options)

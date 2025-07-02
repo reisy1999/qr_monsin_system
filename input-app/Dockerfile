@@ -9,7 +9,7 @@ COPY input-app/tsconfig*.json ./
 RUN npm install
 
 # Add shared folder so that tsconfig.app.json can include it
-COPY ../shared /shared
+COPY ./shared /shared
 
 # Type check
 RUN npx tsc --project tsconfig.json --noEmit

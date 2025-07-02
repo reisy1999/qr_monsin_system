@@ -1,4 +1,4 @@
-import type { Template } from '../../../shared/templates';
+import type { Template, Question } from '../../shared/templates';
 
 function splitCsvLine(line: string): string[] {
   const result: string[] = [];
@@ -45,7 +45,7 @@ export function mapValuesToLabels(
   const answers: Record<string, string | string[]> = {};
   const result: { label: string; value: string }[] = [];
 
-  template.questions.forEach((q, idx) => {
+  template.questions.forEach((q: Question, idx: number) => {
     const raw = values[idx] ?? '';
     let display = raw;
     let store: string | string[] = raw;

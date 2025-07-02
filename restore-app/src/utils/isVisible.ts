@@ -1,4 +1,4 @@
-import type { Question } from '../../../shared/templates';
+import type { Question } from '../../shared/templates';
 
 export function isVisible(question: Question, answers: Record<string, string | string[]>): boolean {
   if (!question.conditional_on || !question.conditional_value) return true;

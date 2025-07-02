@@ -26,5 +26,5 @@
     "noUncheckedSideEffectImports": true
   },
   "types": ["node"],
-  "include": ["src", "src/custom.d.ts", "../shared"],
+  "include": ["src", "src/custom.d.ts", "./shared"],
 }

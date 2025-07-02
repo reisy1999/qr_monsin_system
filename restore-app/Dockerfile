@@ -8,6 +8,8 @@ COPY restore-app/tsconfig.json ./
 COPY restore-app/tsconfig.app.json ./
 COPY restore-app/tsconfig.node.json ./
 COPY restore-app/src ./src
+COPY shared ./shared
+COPY restore-app/index.html ./
 COPY restore-app/vite.config.ts ./vite.config.ts
 RUN npm install
 # Verify Node and npm versions
@@ -35,7 +37,7 @@ FROM nginx:1.21-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
 COPY restore-app/nginx.conf /etc/nginx/conf.d/default.conf
-COPY ../docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY ./docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://localhost/ || exit 1
